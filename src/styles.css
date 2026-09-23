@@ -187,7 +187,7 @@ h1 {
   outline: 3px solid var(--encre);
   outline-offset: 2px;
 }
-.err {
+.bloc .err {
   color: #9b1c14;
   font-size: 13.5px;
   margin: 0 0 10px;
