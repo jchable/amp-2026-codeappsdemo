@@ -49,6 +49,7 @@ describe("TicketForm", () => {
 
     fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
     fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
+    fireEvent.click(screen.getByLabelText("Haute"));
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Créer" }));
@@ -57,6 +58,7 @@ describe("TicketForm", () => {
     expect(onCreer).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Titre")).toHaveValue("VPN inaccessible");
     expect(screen.getByLabelText("Demandeur")).toHaveValue("julien");
+    expect(screen.getByLabelText("Haute")).toBeChecked();
   });
 
   it("désactive le bouton pendant la création puis le réactive", async () => {
