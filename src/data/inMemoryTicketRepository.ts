@@ -1,6 +1,6 @@
 import type { TicketRepository } from "./ticketRepository";
 import type { Ticket, NouveauTicket, Statut } from "../domain/ticket";
-import { creerTicket, changerStatut } from "../domain/ticket";
+import { creerTicket, changerStatut as appliquerTransition } from "../domain/ticket";
 
 /** Impl mémoire : sert aux tests et au dev local sans connexion SharePoint. */
 export class InMemoryTicketRepository implements TicketRepository {
@@ -28,7 +28,7 @@ export class InMemoryTicketRepository implements TicketRepository {
   async changerStatut(id: string, statut: Statut): Promise<Ticket> {
     const i = this.tickets.findIndex((t) => t.id === id);
     if (i < 0) throw new Error(`Ticket introuvable : ${id}`);
-    this.tickets[i] = changerStatut(this.tickets[i], statut);
+    this.tickets[i] = appliquerTransition(this.tickets[i], statut);
     return this.tickets[i];
   }
 

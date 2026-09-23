@@ -96,11 +96,11 @@ describe("filtrerParStatut / trierParPriorite / compter", () => {
     expect(trierParPriorite(tickets).map((t) => t.id)).toEqual(["b", "c", "a"]);
   });
   it("tie-break par date : plus récent d'abord quand priorités égales", () => {
-    const samePrority = [
+    const samePriority = [
       base({ id: "x", priorite: "Moyenne", creeLe: "2026-09-24T10:00:00Z" }),
       base({ id: "y", priorite: "Moyenne", creeLe: "2026-09-24T11:00:00Z" }),
     ];
-    expect(trierParPriorite(samePrority).map((t) => t.id)).toEqual(["y", "x"]);
+    expect(trierParPriorite(samePriority).map((t) => t.id)).toEqual(["y", "x"]);
   });
   it("compte par statut", () => {
     expect(compter(tickets)).toEqual({ Nouveau: 2, "En cours": 1, "Résolu": 0 });

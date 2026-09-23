@@ -19,6 +19,8 @@ function unwrap<T>(result: IOperationResult<T>): T {
  */
 export class SharePointTicketRepository implements TicketRepository {
   async lister(): Promise<Ticket[]> {
+    // getAll est appelé sans option de pagination : une longue liste peut être tronquée
+    // par la taille de page du connecteur (à vérifier sur la liste réelle).
     const rows = unwrap(await TicketsService.getAll());
     return rows.map(fromSharePoint);
   }
@@ -43,6 +45,7 @@ export class SharePointTicketRepository implements TicketRepository {
   }
 
   async supprimer(id: string): Promise<void> {
+    // Le delete généré jette son IOperationResult : un échec de suppression n'est pas observable ici.
     await TicketsService.delete(id);
   }
 }
