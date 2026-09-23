@@ -88,41 +88,6 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 
 ---
 
-## 3. Étapes git (tags step-*)
-
-Les étapes du projet sont des tags annotés, empilés sur une seule branche (`main`) :
-
-```bash
-git tag -n --sort=version:refname          # lister les étapes
-git switch --detach step-0-init           # aller à une étape (lecture seule)
-git switch main                            # revenir
-git switch -c essai step-1-brainstorming   # repartir d'une étape
-```
-
-| Tag | Contenu |
-|---|---|
-| `step-base` | application d'origine, avant la reconstruction |
-| `step-0-init` | code remis à zéro |
-| `step-1-brainstorming` | spec (règles 1 à 6) et plan TDD |
-| `step-2-development` | app complète, SharePoint réel, interface Le guichet, déployée |
-| `step-3-branding` | départ de la charte graphique |
-
----
-
-## 4. Captures à prendre → slides jalons
-
-| Capture | Quand (Plan A) | Slide |
-|---|---|---|
-| `CLAUDE.md` | A0 | Démo / feuille de route |
-| Test **ROUGE** | A3 | Ce qu'il faut regarder |
-| Test **VERT** + sortie brute | A3 | Ce qu'il faut regarder |
-| Revue sous-agent | A4 | Ce qu'il faut regarder |
-| App déployée (belle) | A7 | Ce qu'il faut regarder |
-
-*(Je les intégrerai dans ton `.pptx` une fois que tu me les auras fournies.)*
-
----
-
 ## 5. Aide-mémoire commandes
 
 ```bash
