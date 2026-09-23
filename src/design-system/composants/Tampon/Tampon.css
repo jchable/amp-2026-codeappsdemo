@@ -1,0 +1,9 @@
+.cto-tampon {
+  display: inline-block;
+  padding: var(--cto-space-1) var(--cto-space-2);
+  border: 2px solid currentColor;
+  border-radius: var(--cto-rayon-sm);
+  background: var(--cto-voile-clair);
+  font: var(--cto-poids-gras) var(--cto-taille-sm) var(--cto-police-texte);
+  transform: rotate(-5deg);
+}

@@ -1,0 +1,23 @@
+.cto-puce {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cto-space-2);
+  padding: var(--cto-space-2) var(--cto-space-4);
+  border: 2px solid var(--cto-bordure-controle-page);
+  border-radius: var(--cto-rayon-pleine);
+  background: transparent;
+  font-weight: var(--cto-poids-semi);
+  cursor: pointer;
+}
+
+.cto-puce[aria-pressed="true"] {
+  border-color: var(--cto-selection-fond);
+  background: var(--cto-selection-fond);
+  color: var(--cto-selection-texte);
+}
+
+@media (pointer: coarse) {
+  .cto-puce {
+    min-height: var(--cto-cible-tactile);
+  }
+}
