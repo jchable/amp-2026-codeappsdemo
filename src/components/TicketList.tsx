@@ -32,6 +32,7 @@ function Souche({ ticket: t, onChangerStatut, onSupprimer }: { ticket: Ticket } 
           <button
             type="button"
             className="voir"
+            aria-label={`${depliee ? "Masquer" : "Voir"} la description : ${t.titre}`}
             aria-expanded={depliee}
             aria-controls={idDescription}
             onClick={() => setDepliee(!depliee)}

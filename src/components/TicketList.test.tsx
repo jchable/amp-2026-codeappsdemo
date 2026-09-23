@@ -63,6 +63,43 @@ describe("TicketList", () => {
     expect(screen.getByRole("button", { name: /Masquer la description/ })).toHaveAttribute("aria-expanded", "true");
   });
 
+  it("nomme chaque bouton de description avec le titre de sa demande", () => {
+    render(
+      <TicketList
+        tickets={[
+          base({ id: "1", titre: "VPN inaccessible", description: "Première description" }),
+          base({ id: "2", titre: "Badge cassé", description: "Seconde description" }),
+        ]}
+        onChangerStatut={vi.fn()}
+        onSupprimer={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Voir la description : VPN inaccessible" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Voir la description : Badge cassé" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Voir la description : VPN inaccessible" }));
+    expect(screen.getByRole("button", { name: "Masquer la description : VPN inaccessible" })).toBeInTheDocument();
+  });
+
+  it("déplier une description ne déplie pas celle des autres demandes", () => {
+    render(
+      <TicketList
+        tickets={[
+          base({ id: "1", titre: "VPN inaccessible", description: "Première description" }),
+          base({ id: "2", titre: "Badge cassé", description: "Seconde description" }),
+        ]}
+        onChangerStatut={vi.fn()}
+        onSupprimer={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: /Voir la description/ })[0]);
+    expect(screen.getByText("Première description")).toBeInTheDocument();
+    expect(screen.queryByText("Seconde description")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Voir la description : Badge cassé/ })).toHaveAttribute(
+      "aria-expanded",
+      "false"
+    );
+  });
+
   it("n'affiche aucun bouton de description quand elle est vide", () => {
     rendre(base({ description: "" }));
     expect(screen.queryByRole("button", { name: /description/ })).not.toBeInTheDocument();
