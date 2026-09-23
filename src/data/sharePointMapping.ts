@@ -32,8 +32,9 @@ export interface SharePointTicketPayload {
   Demandeur: string;
 }
 
-function champObligatoire<T>(valeur: T | undefined, nom: string): T {
-  if (valeur === undefined) throw new Error(`Champ SharePoint manquant : ${nom}.`);
+// OData renvoie `null` (et non `undefined`) pour une colonne vide : les deux comptent comme absents.
+function champObligatoire<T>(valeur: T | null | undefined, nom: string): T {
+  if (valeur == null) throw new Error(`Champ SharePoint manquant : ${nom}.`);
   return valeur;
 }
 

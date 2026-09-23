@@ -48,6 +48,31 @@ describe("fromSharePoint", () => {
   });
 });
 
+describe("fromSharePoint — null OData et absence traités pareil", () => {
+  const complet = {
+    ID: 1,
+    Title: "T",
+    Description: "",
+    Statut: { Value: "Nouveau" },
+    Priorite: { Value: "Moyenne" },
+    Demandeur: "j",
+    Created: "2026-09-23T08:00:00Z",
+  };
+  const champs = ["ID", "Title", "Statut", "Priorite", "Created"] as const;
+
+  it.each(champs)("lève une erreur explicite si %s vaut null", (champ) => {
+    const record = { ...complet, [champ]: null } as unknown as SharePointTicketRecord;
+    expect(() => fromSharePoint(record)).toThrow(new RegExp(`Champ SharePoint manquant : ${champ}`));
+  });
+
+  it.each(champs)("lève une erreur explicite si %s est absent", (champ) => {
+    const { [champ]: _omis, ...record } = complet;
+    expect(() => fromSharePoint(record as SharePointTicketRecord)).toThrow(
+      new RegExp(`Champ SharePoint manquant : ${champ}`)
+    );
+  });
+});
+
 describe("toSharePoint", () => {
   it("envoie Statut/Priorite en chaînes brutes (pas en objet { Value }) et omet l'id", () => {
     const ticket = {
