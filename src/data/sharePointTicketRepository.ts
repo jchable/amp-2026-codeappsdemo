@@ -1,32 +1,48 @@
 import type { TicketRepository } from "./ticketRepository";
 import type { Ticket, NouveauTicket, Statut } from "../domain/ticket";
+import { creerTicket, changerStatut as appliquerTransition } from "../domain/ticket";
+import { fromSharePoint, toSharePoint } from "./sharePointMapping";
+import type { IOperationResult } from "@microsoft/power-apps/data";
+import { TicketsService } from "../generated/services/TicketsService";
+
+/** Déballe un IOperationResult : renvoie `.data` si succès, sinon lève une erreur lisible. */
+function unwrap<T>(result: IOperationResult<T>): T {
+  if (!result.success) {
+    throw new Error(result.error?.message ?? "Appel SharePoint échoué.");
+  }
+  return result.data;
+}
 
 /**
- * Adaptateur SharePoint. Tant que `pac code add-data-source` n'a pas été lancé
- * (Task 9) et le mapping écrit (Task 10-11), les appels lèvent une erreur
- * explicite — le reste de l'app reste fonctionnel et testable via l'impl mémoire.
+ * Adaptateur SharePoint. Mappe les colonnes de la liste SP <-> le modèle métier
+ * via sharePointMapping.ts (pur, testé), et délègue au service généré.
  */
 export class SharePointTicketRepository implements TicketRepository {
-  private absent(): never {
-    throw new Error(
-      "Service SharePoint non généré. Lancez `pac code add-data-source` (Task 9) " +
-        "puis complétez le mapping (Task 10-11)."
-    );
-  }
-
   async lister(): Promise<Ticket[]> {
-    return this.absent();
+    const rows = unwrap(await TicketsService.getAll());
+    return rows.map(fromSharePoint);
   }
 
-  async creer(_input: NouveauTicket): Promise<Ticket> {
-    return this.absent();
+  async creer(input: NouveauTicket): Promise<Ticket> {
+    // id/creeLe sont gérés par SharePoint (ID auto-incrémenté, Created système) :
+    // on ne les utilise pas dans le payload envoyé (toSharePoint ne les inclut pas).
+    const brouillon = creerTicket(input, { id: () => "", maintenant: () => new Date() });
+    const cree = unwrap(await TicketsService.create(toSharePoint(brouillon)));
+    return fromSharePoint(cree);
   }
 
-  async changerStatut(_id: string, _statut: Statut): Promise<Ticket> {
-    return this.absent();
+  async changerStatut(id: string, statut: Statut): Promise<Ticket> {
+    // On lit le ticket courant, on applique la machine à états du domaine (qui lève
+    // sur une transition interdite), puis on persiste uniquement le statut validé —
+    // jamais le statut cible brut envoyé par l'appelant.
+    const actuel = unwrap(await TicketsService.get(id));
+    const ticketActuel = fromSharePoint(actuel);
+    const valide = appliquerTransition(ticketActuel, statut);
+    const maj = unwrap(await TicketsService.update(id, { Statut: valide.statut }));
+    return fromSharePoint(maj);
   }
 
-  async supprimer(_id: string): Promise<void> {
-    return this.absent();
+  async supprimer(id: string): Promise<void> {
+    await TicketsService.delete(id);
   }
 }
