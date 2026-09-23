@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validerTicket, creerTicket, changerStatut, transitionAutorisee, transitionsPossibles, filtrerParStatut, trierParPriorite, compter, type NouveauTicket, type Ticket } from "./ticket";
+import { validerTicket, creerTicket, changerStatut, transitionAutorisee, transitionsPossibles, filtrerParStatut, trierParPriorite, compter, prochainATraiter, libelleTransition, type NouveauTicket, type Ticket } from "./ticket";
 
 describe("validerTicket", () => {
   it("exige un titre", () => {
@@ -104,5 +104,50 @@ describe("filtrerParStatut / trierParPriorite / compter", () => {
   });
   it("compte par statut", () => {
     expect(compter(tickets)).toEqual({ Nouveau: 2, "En cours": 1, "Résolu": 0 });
+  });
+});
+
+describe("prochainATraiter (règle 7)", () => {
+  it("renvoie undefined s'il n'y a aucun ticket Nouveau", () => {
+    const tickets = [base({ id: "a", statut: "En cours" }), base({ id: "b", statut: "Résolu" })];
+    expect(prochainATraiter(tickets)).toBeUndefined();
+    expect(prochainATraiter([])).toBeUndefined();
+  });
+  it("choisit la priorité la plus haute parmi les Nouveau", () => {
+    const tickets = [
+      base({ id: "a", statut: "Nouveau", priorite: "Basse" }),
+      base({ id: "b", statut: "Nouveau", priorite: "Haute" }),
+      base({ id: "c", statut: "Nouveau", priorite: "Moyenne" }),
+    ];
+    expect(prochainATraiter(tickets)?.id).toBe("b");
+  });
+  it("à priorité égale, choisit le plus ancien", () => {
+    const tickets = [
+      base({ id: "recent", statut: "Nouveau", priorite: "Haute", creeLe: "2026-09-24T12:00:00Z" }),
+      base({ id: "ancien", statut: "Nouveau", priorite: "Haute", creeLe: "2026-09-24T08:00:00Z" }),
+    ];
+    expect(prochainATraiter(tickets)?.id).toBe("ancien");
+  });
+  it("ignore les tickets qui ne sont pas Nouveau, même de priorité haute", () => {
+    const tickets = [
+      base({ id: "encours", statut: "En cours", priorite: "Haute" }),
+      base({ id: "nouveau", statut: "Nouveau", priorite: "Basse" }),
+    ];
+    expect(prochainATraiter(tickets)?.id).toBe("nouveau");
+  });
+  it("ne modifie pas le tableau reçu", () => {
+    const tickets = [base({ id: "a", statut: "Nouveau" }), base({ id: "b", statut: "Nouveau", priorite: "Haute" })];
+    const copie = [...tickets];
+    prochainATraiter(tickets);
+    expect(tickets).toEqual(copie);
+  });
+});
+
+describe("libelleTransition", () => {
+  it("nomme chaque transition autorisée avec un verbe", () => {
+    expect(libelleTransition("Nouveau", "En cours")).toBe("Prendre en charge");
+    expect(libelleTransition("En cours", "Résolu")).toBe("Marquer résolu");
+    expect(libelleTransition("En cours", "Nouveau")).toBe("Renvoyer à Nouveau");
+    expect(libelleTransition("Résolu", "En cours")).toBe("Rouvrir");
   });
 });

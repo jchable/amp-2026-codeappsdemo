@@ -96,3 +96,22 @@ export function compter(tickets: Ticket[]): Record<Statut, number> {
     Résolu: filtrerParStatut(tickets, "Résolu").length,
   };
 }
+
+/** Règle 7 : parmi les Nouveau, priorité la plus haute, puis le plus ancien. */
+export function prochainATraiter(tickets: Ticket[]): Ticket | undefined {
+  return tickets
+    .filter((t) => t.statut === "Nouveau")
+    .sort(
+      (a, b) =>
+        PRIORITE_ORDRE[a.priorite] - PRIORITE_ORDRE[b.priorite] ||
+        a.creeLe.localeCompare(b.creeLe)
+    )[0];
+}
+
+/** Verbe affiché sur le bouton d'une transition autorisée. */
+export function libelleTransition(de: Statut, vers: Statut): string {
+  if (de === "Nouveau" && vers === "En cours") return "Prendre en charge";
+  if (de === "En cours" && vers === "Résolu") return "Marquer résolu";
+  if (de === "En cours" && vers === "Nouveau") return "Renvoyer à Nouveau";
+  return "Rouvrir";
+}
