@@ -1,8 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import type { NouveauTicket, Priorite } from "../domain/ticket";
 import { validerTicket, PRIORITES } from "../domain/ticket";
+import { Bouton, Champ, ChoixSegmente, Surface, Titre, type OptionChoix } from "../design-system";
+import { tonPriorite } from "./tonPriorite";
+import "./TicketForm.css";
 
-const CLASSE_PRIORITE: Record<Priorite, string> = { Basse: "b", Moyenne: "m", Haute: "h" };
+const OPTIONS_PRIORITE: OptionChoix<Priorite>[] = PRIORITES.map((p) => ({
+  valeur: p,
+  libelle: p,
+  ton: tonPriorite(p),
+}));
 
 export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise<boolean> }) {
   const [titre, setTitre] = useState("");
@@ -32,46 +39,42 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
   }
 
   return (
-    <form className="bloc" onSubmit={soumettre}>
-      <h2>Nouvelle demande</h2>
-      <label>
-        Titre
-        <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex. VPN inaccessible" />
-      </label>
-      <label>
-        Demandeur
-        <input value={demandeur} onChange={(e) => setDemandeur(e.target.value)} placeholder="Prénom Nom" />
-      </label>
-      <label>
-        Description
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Détails utiles pour traiter la demande (optionnel)"
-        />
-      </label>
-      <div className="prios" role="radiogroup" aria-label="Priorité">
-        {PRIORITES.map((p) => (
-          <label key={p} className={CLASSE_PRIORITE[p]}>
-            <input
-              type="radio"
-              name="priorite"
-              value={p}
-              checked={priorite === p}
-              onChange={() => setPriorite(p)}
-            />
-            <span>{p}</span>
-          </label>
-        ))}
-      </div>
+    <Surface as="form" className="app-ticket-form" onSubmit={soumettre}>
+      <Titre niveau={2}>Nouvelle demande</Titre>
+      <Champ
+        libelle="Titre"
+        value={titre}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setTitre(e.target.value)}
+        placeholder="Ex. VPN inaccessible"
+      />
+      <Champ
+        libelle="Demandeur"
+        value={demandeur}
+        onChange={(e: ChangeEvent<HTMLInputElement>) => setDemandeur(e.target.value)}
+        placeholder="Prénom Nom"
+      />
+      <Champ
+        libelle="Description"
+        multiligne
+        value={description}
+        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+        placeholder="Détails utiles pour traiter la demande (optionnel)"
+      />
+      <ChoixSegmente
+        legende="Priorité"
+        nom="priorite"
+        valeur={priorite}
+        options={OPTIONS_PRIORITE}
+        onChange={setPriorite}
+      />
       {erreurs.map((x) => (
-        <p key={x} className="err">
+        <p key={x} className="app-ticket-form__err">
           {x}
         </p>
       ))}
-      <button type="submit" className="valider" disabled={enCours}>
+      <Bouton type="submit" pleineLargeur disabled={enCours}>
         Créer
-      </button>
-    </form>
+      </Bouton>
+    </Surface>
   );
 }

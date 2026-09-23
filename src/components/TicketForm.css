@@ -1,0 +1,11 @@
+.app-ticket-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cto-space-3);
+}
+
+.app-ticket-form__err {
+  margin: 0;
+  font-size: var(--cto-taille-sm);
+  color: var(--cto-retour-erreur-texte-surface);
+}

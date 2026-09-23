@@ -1,0 +1,43 @@
+.app-ticket__titre {
+  margin-bottom: var(--cto-space-2);
+}
+
+.app-ticket__qui {
+  font-size: var(--cto-taille-sm);
+}
+
+.app-ticket__voir {
+  align-self: flex-start;
+  margin: var(--cto-space-2) 0 0 calc(var(--cto-space-1) * -1);
+}
+
+.app-ticket__desc {
+  margin: var(--cto-space-2) 0 0;
+  font-size: var(--cto-taille-sm);
+  overflow-wrap: anywhere;
+}
+
+.app-ticket__priorite {
+  margin-top: var(--cto-space-3);
+  font-size: var(--cto-taille-xs);
+  font-weight: var(--cto-poids-gras);
+}
+
+.app-ticket__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cto-space-2);
+  margin-top: auto;
+  padding-top: var(--cto-space-4);
+}
+
+.app-ticket__suppr {
+  margin-left: auto;
+}
+
+@media (pointer: coarse) {
+  .app-ticket__actions {
+    gap: var(--cto-space-2) var(--cto-space-3);
+  }
+}
