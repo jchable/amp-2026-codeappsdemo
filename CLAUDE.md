@@ -74,7 +74,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 6. **Une règle métier = une ligne dans `docs/spec.md` + un test.** Le besoin change ?
    La spec change d'abord.
 7. **Aucun secret dans le code.** Connexions gérées par Power Platform. `.env.local` est
-   ignoré par git. `power.config.json` ne contient que des identifiants non sensibles.
+   versionné (dépôt de démo) et ne contient que des valeurs non sensibles. `power.config.json` ne contient que des identifiants non sensibles.
 8. **YAGNI.** Hors périmètre tant que non demandé : pièces jointes, notifications, droits
    fins, multi-listes.
 
@@ -93,7 +93,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 
 - `VITE_USE_SHAREPOINT` absent ou `false` → mémoire (défaut, plan B de démo).
   `true` → `SharePointTicketRepository`.
-- `.env.local` : copier `.env.local.example`. Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
+- `.env.local` : versionné dans ce dépôt de démo (mode SharePoint activé) ; `.env.local.example` montre le mode mémoire. Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
 - `power.config.json` : produit par `pac code init` (`appId`, `environmentId`) puis complété par
   `pac code add-data-source` (`connectionReferences`). `pac code init` refuse de s'exécuter si le
   fichier existe déjà. Le code applicatif ne le lit pas.
