@@ -390,6 +390,10 @@ h1 {
     align-items: center;
     justify-content: center;
   }
+  .bloc input:not([type="radio"]),
+  .bloc textarea {
+    min-height: 44px;
+  }
   .prios span {
     min-height: 44px;
     display: flex;
