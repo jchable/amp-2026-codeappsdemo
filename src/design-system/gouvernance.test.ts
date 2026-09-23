@@ -3,6 +3,7 @@ import { couleursEnDur, proprietesDe, resoudre, variablesUtilisees, type Proprie
 import { ratioContraste } from "./tokens/contraste";
 import {
   PAIRES_CONTRASTE,
+  POINT_DE_RUPTURE_PX,
   TOKENS_PRIMITIFS_AUTRES,
   TOKENS_PRIMITIFS_COULEUR,
   TOKENS_SEMANTIQUES,
@@ -84,4 +85,18 @@ describe("gouvernance — tokens", () => {
       expect(echecs).toEqual([]);
     });
   }
+});
+
+describe("gouvernance — responsive", () => {
+  it("le point de rupture du manifeste est celui des @media du DS", () => {
+    const attendu = `@media (max-width: ${POINT_DE_RUPTURE_PX}px)`;
+    const grille = fichiersCss["/src/design-system/composants/Grille/Grille.css"];
+    expect(grille).toContain(attendu);
+    const autres = Object.entries(fichiersCss)
+      .filter(([chemin]) => chemin.startsWith("/src/design-system/"))
+      .flatMap(([chemin, css]) =>
+        [...css.matchAll(/@media \(max-width: (\d+)px\)/g)].filter((m) => m[1] !== String(POINT_DE_RUPTURE_PX)).map(() => chemin)
+      );
+    expect(autres).toEqual([]);
+  });
 });

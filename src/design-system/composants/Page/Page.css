@@ -1,0 +1,5 @@
+.cto-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--cto-space-7) var(--cto-space-6) calc(var(--cto-space-8) * 2);
+}

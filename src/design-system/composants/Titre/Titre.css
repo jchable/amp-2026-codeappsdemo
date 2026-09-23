@@ -1,0 +1,16 @@
+.cto-titre {
+  margin: 0;
+}
+
+.cto-titre--marque {
+  font: var(--cto-poids-extra) var(--cto-taille-lg) var(--cto-police-titre);
+  letter-spacing: 0.01em;
+}
+
+.cto-titre--sous-titre {
+  font: var(--cto-poids-semi) var(--cto-taille-xl) / 1.3 var(--cto-police-texte);
+}
+
+.cto-titre--carte {
+  font: var(--cto-poids-gras) var(--cto-taille-lg) / 1.3 var(--cto-police-texte);
+}
