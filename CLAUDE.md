@@ -23,6 +23,7 @@ npm test               # Vitest, une passe — voir docs/superpowers/plans/ pour
 npm run test:watch     # boucle TDD : RED → GREEN → refactor
 npm run build          # tsc -b (typecheck strict) + vite build — doit passer sans erreur
 npm run dev            # http://localhost:3000 — mode MÉMOIRE, sans Power Platform
+# Documentation du design system : http://localhost:3000/#/design-system (mode mémoire)
 npm run power:run      # pac code run : hôte Power Apps local, requis pour le mode SharePoint
 npm run push           # pac code push : déploiement
 ```
@@ -38,6 +39,7 @@ npm run push           # pac code push : déploiement
   setup `src/test/setup.ts` (jest-dom).
 - CLI : `pac code …` (Power Platform CLI, outil .NET, présent sur la machine). Son successeur
   officiel `pa app …` (`@microsoft/power-apps-cli`, npm) n'est **pas** installé ici.
+- Styles : CSS pur et variables CSS `--cto-*` (design system Contoso), polices `@fontsource-variable`. Aucune bibliothèque de composants ni de CSS-in-JS.
 
 ## Architecture — dépendances à sens unique
 
@@ -56,6 +58,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 | `src/hooks/useTickets.ts` | État, erreurs, rechargement après chaque mutation. Trie via le domaine. |
 | `src/App.tsx` | Choisit le repo selon `VITE_USE_SHAREPOINT`. Données de démo en mémoire. |
 | `src/PowerProvider.tsx` | Attend `getContext()` avant d'afficher l'app. Bannière si Power Platform indisponible. |
+| `src/design-system/` | Design system **Contoso** : tokens `--cto-*` (primitifs → sémantiques par thème → composants), 12 composants React, doc vivante `#/design-system`. Point d'entrée unique : `index.ts`. **N'importe rien du métier.** Voir `src/design-system/README.md`. |
 | `src/generated/` + `.power/schemas/` | Sortie de `pac code add-data-source` (modèles + services), commitée. **Jamais éditée à la main.** |
 
 ## Règles (non négociables)
@@ -77,6 +80,11 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
    ignoré par git. `power.config.json` ne contient que des identifiants non sensibles.
 8. **YAGNI.** Hors périmètre tant que non demandé : pièces jointes, notifications, droits
    fins, multi-listes.
+9. **Design system Contoso.** Les composants de l'app n'utilisent ni couleur en dur ni couleur
+   primitive (`--cto-teal-…`, etc.) : uniquement des tokens sémantiques. Leur CSS local est préfixé
+   `app-`. Le DS n'importe jamais le métier (`domain/`, `data/`, `hooks/`, `generated/`, SDK, `App`).
+   On importe depuis `../design-system`, jamais un fichier profond. Un nouveau composant ou token
+   passe par le README du DS (usage réel, test rouge, fiche de doc, manifeste).
 
 ## Règles métier (rappel — la source est `docs/spec.md`)
 
@@ -143,6 +151,10 @@ mettre `VITE_USE_SHAREPOINT=true` et à lancer `npm run power:run`.
   `package-lock.json` d'abord.
 - **`vitest.config.ts.timestamp-*.mjs`** : résidus d'un chargement de config planté.
   À supprimer, jamais à commiter.
+- **Tests de gouvernance du DS** (`src/design-system/gouvernance.test.ts`) : ils lisent les CSS via
+  `import.meta.glob(…?raw)`. Un `npm test` rouge « couleur en dur », « token non défini » ou
+  « contraste » se corrige dans les tokens, pas en assouplissant le test.
+- **Hash routing** : la doc est sur `#/design-system`. Elle est rendue hors de `PowerProvider`.
 - Code Apps doit être **activé dans l'environnement** (Admin Center → Settings → Features).
   Les utilisateurs finaux ont besoin d'une licence Power Apps Premium.
 

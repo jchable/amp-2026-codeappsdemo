@@ -364,7 +364,8 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `src/design-system/tokens/manifeste.ts`, `themes.ts`, `primitifs.css`, `semantiques.css`, `reset.css`, `src/design-system/styles.css`, `src/design-system/polices.ts`
-- Test: `src/design-system/gouvernance.test.ts`
+- Modify: `vitest.config.ts` — ajouter `css: { include: [/\.css\?raw$/] }` dans `test` (Vitest 2 renvoie sinon une chaîne vide pour tout import `.css?raw`, ce qui ferait passer tous les scans de gouvernance à vide ; défaut du plan découvert à l'exécution)
+- Test: `src/design-system/gouvernance.test.ts` (dont un test-garde : les CSS lus ne sont pas vides)
 
 **Interfaces:**
 - Consumes: `proprietesDe`, `resoudre`, `variablesUtilisees`, `couleursEnDur` (Task 1), `ratioContraste` (Task 1).
