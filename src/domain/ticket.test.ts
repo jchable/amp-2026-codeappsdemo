@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validerTicket, creerTicket, type NouveauTicket } from "./ticket";
+import { validerTicket, creerTicket, changerStatut, transitionAutorisee, transitionsPossibles, type NouveauTicket, type Ticket } from "./ticket";
 
 describe("validerTicket", () => {
   it("exige un titre", () => {
@@ -41,5 +41,41 @@ describe("creerTicket", () => {
   });
   it("refuse un ticket invalide", () => {
     expect(() => creerTicket({ titre: "", demandeur: "" }, deps)).toThrow();
+  });
+});
+
+const base = (over: Partial<Ticket> = {}): Ticket => ({
+  id: "x",
+  titre: "T",
+  description: "",
+  statut: "Nouveau",
+  priorite: "Moyenne",
+  demandeur: "julien",
+  creeLe: "2026-09-24T10:00:00Z",
+  ...over,
+});
+
+describe("changerStatut / transitionAutorisee / transitionsPossibles", () => {
+  it("autorise Nouveau → En cours", () => {
+    expect(changerStatut(base(), "En cours").statut).toBe("En cours");
+  });
+  it("interdit Nouveau → Résolu", () => {
+    expect(() => changerStatut(base(), "Résolu")).toThrow();
+  });
+  it("permet la réouverture Résolu → En cours", () => {
+    expect(transitionAutorisee("Résolu", "En cours")).toBe(true);
+  });
+  it("ne change rien (même référence) si le statut cible est déjà le statut courant", () => {
+    const t = base({ statut: "En cours" });
+    expect(changerStatut(t, "En cours")).toBe(t);
+  });
+  it("transitionsPossibles depuis Nouveau : lui-même + En cours", () => {
+    expect(transitionsPossibles("Nouveau")).toEqual(["Nouveau", "En cours"]);
+  });
+  it("transitionsPossibles depuis En cours : lui-même + Résolu + Nouveau", () => {
+    expect(transitionsPossibles("En cours")).toEqual(["En cours", "Résolu", "Nouveau"]);
+  });
+  it("transitionsPossibles depuis Résolu : lui-même + En cours (réouverture)", () => {
+    expect(transitionsPossibles("Résolu")).toEqual(["Résolu", "En cours"]);
   });
 });

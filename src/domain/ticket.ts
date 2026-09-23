@@ -49,3 +49,27 @@ export function creerTicket(
     creeLe: deps.maintenant().toISOString(),
   };
 }
+
+const TRANSITIONS: Record<Statut, Statut[]> = {
+  Nouveau: ["En cours"],
+  "En cours": ["Résolu", "Nouveau"],
+  Résolu: ["En cours"], // réouverture possible
+};
+
+export function transitionAutorisee(de: Statut, vers: Statut): boolean {
+  return TRANSITIONS[de].includes(vers);
+}
+
+/** Change le statut si la transition est autorisée, sinon lève. */
+export function changerStatut(ticket: Ticket, vers: Statut): Ticket {
+  if (ticket.statut === vers) return ticket;
+  if (!transitionAutorisee(ticket.statut, vers)) {
+    throw new Error(`Transition interdite : ${ticket.statut} → ${vers}.`);
+  }
+  return { ...ticket, statut: vers };
+}
+
+/** Statuts à proposer dans un sélecteur : le statut courant + les transitions autorisées. */
+export function transitionsPossibles(statut: Statut): Statut[] {
+  return [statut, ...TRANSITIONS[statut]];
+}
