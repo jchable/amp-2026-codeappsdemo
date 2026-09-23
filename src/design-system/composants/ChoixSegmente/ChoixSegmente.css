@@ -1,0 +1,55 @@
+.cto-choix {
+  display: flex;
+  gap: var(--cto-space-2);
+}
+
+.cto-choix__option {
+  position: relative;
+  flex: 1;
+}
+
+.cto-choix__option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.cto-choix__option span {
+  display: block;
+  padding: var(--cto-space-2);
+  border: 2px solid transparent;
+  border-radius: var(--cto-rayon-md);
+  background: var(--cto-priorite-neutre-fond);
+  color: var(--cto-encre-souche);
+  font-weight: var(--cto-poids-gras);
+  text-align: center;
+  cursor: pointer;
+}
+
+.cto-choix__option--haute span {
+  background: var(--cto-priorite-haute-fond);
+}
+.cto-choix__option--moyenne span {
+  background: var(--cto-priorite-moyenne-fond);
+}
+.cto-choix__option--basse span {
+  background: var(--cto-priorite-basse-fond);
+}
+
+.cto-choix__option input:checked + span {
+  border-color: var(--cto-texte-sur-surface);
+  box-shadow: 0 0 0 2px var(--cto-fond-champ) inset;
+}
+
+.cto-choix__option input:focus-visible + span {
+  outline: 3px solid var(--cto-anneau-focus-surface);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .cto-choix__option span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--cto-cible-tactile);
+  }
+}
