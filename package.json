@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sharepoint": "vite --mode sharepoint",
     "power:run": "pac code run",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
