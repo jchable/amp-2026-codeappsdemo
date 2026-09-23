@@ -119,9 +119,11 @@ mettre `VITE_USE_SHAREPOINT=true` et à lancer `npm run power:run`.
   Les résultats sont des `IOperationResult<T> = { success, data, error? }` : `data` est le
   tableau ou l'enregistrement directement (pas d'enveloppe `.value`). `delete` renvoie `void` :
   son échec n'est pas observable.
-- Colonnes Choix (`Statut`, `Priorite`), asymétriques : en **lecture** ce sont des objets
-  `{ "@odata.type", Value, Id }` ; en **écriture** ce sont de simples chaînes
-  (`Statut?: string`). Ne pas envoyer `{ Value: ... }`.
+- Colonnes Choix (`Statut`, `Priorite`) : la **lecture** renvoie des objets
+  `{ "@odata.type", Value, Id }` ; l'**écriture** doit AUSSI envoyer `{ Value: "..." }`
+  (schéma `.power/schemas/sharepointonline/tickets.Schema.json`), bien que le type TypeScript
+  généré dise `string` (défaut du générateur : cast à la frontière du repository). Une chaîne
+  brute est ignorée silencieusement et crée une ligne aux choix vides.
 - Ignorer les propriétés suffixées `#Id` du modèle généré dans les payloads `create` / `update`.
 - `delete(id)` attend l'ID numérique SharePoint sous forme de chaîne.
 
