@@ -1,0 +1,65 @@
+.cto-bouton {
+  /* Tokens de composant : un conteneur les surcharge par un sélecteur descendant (voir Souche.css). */
+  --cto-bouton-primaire-fond: var(--cto-action-primaire-fond);
+  --cto-bouton-primaire-texte: var(--cto-action-primaire-texte);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cto-space-2);
+  padding: calc(var(--cto-space-3) - 2px) calc(var(--cto-space-4) - 2px);
+  border: 2px solid transparent;
+  border-radius: var(--cto-rayon-md);
+  background: none;
+  color: inherit;
+  font-weight: var(--cto-poids-gras);
+  cursor: pointer;
+}
+
+.cto-bouton--primaire {
+  background: var(--cto-bouton-primaire-fond);
+  color: var(--cto-bouton-primaire-texte);
+}
+.cto-bouton--primaire:hover:not(:disabled) {
+  filter: brightness(0.85);
+}
+
+.cto-bouton--accent {
+  background: var(--cto-action-accent-fond);
+  color: var(--cto-action-accent-texte);
+}
+.cto-bouton--accent:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.cto-bouton--secondaire {
+  border-color: currentColor;
+}
+
+.cto-bouton--compacte {
+  padding: calc(var(--cto-space-2) - 2px) calc(var(--cto-space-3) - 2px);
+  border-radius: var(--cto-rayon-sm);
+  font-size: var(--cto-taille-sm);
+}
+
+.cto-bouton--discret {
+  padding: var(--cto-space-2) var(--cto-space-1);
+  border: 0;
+  font-weight: var(--cto-poids-moyen);
+  text-decoration: underline;
+}
+
+.cto-bouton--pleine {
+  width: 100%;
+}
+
+.cto-bouton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .cto-bouton {
+    min-height: var(--cto-cible-tactile);
+  }
+}
