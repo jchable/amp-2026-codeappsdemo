@@ -1,0 +1,36 @@
+.cto-champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cto-space-1);
+}
+
+.cto-champ__libelle {
+  font-size: var(--cto-taille-sm);
+  font-weight: var(--cto-poids-semi);
+}
+
+.cto-champ__controle {
+  display: block;
+  width: 100%;
+  padding: var(--cto-space-2) var(--cto-space-3);
+  border: 1.5px solid var(--cto-bordure-controle-surface);
+  border-radius: var(--cto-rayon-md);
+  background: var(--cto-fond-champ);
+  color: var(--cto-texte-sur-surface);
+}
+
+.cto-champ__controle[aria-invalid="true"] {
+  border-color: var(--cto-retour-erreur-texte-surface);
+}
+
+.cto-champ__erreur {
+  margin: 0;
+  font-size: var(--cto-taille-sm);
+  color: var(--cto-retour-erreur-texte-surface);
+}
+
+@media (pointer: coarse) {
+  .cto-champ__controle {
+    min-height: var(--cto-cible-tactile);
+  }
+}
