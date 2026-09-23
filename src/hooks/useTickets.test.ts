@@ -87,3 +87,68 @@ describe("useTickets", () => {
     expect(result.current.erreur).toBe("création refusée");
   });
 });
+
+// Une écriture peut réussir côté serveur alors que la lecture de sa réponse échoue :
+// après un échec, la liste affichée doit refléter l'état réel (sinon un nouvel essai
+// aveugle créerait un doublon). recharger() efface `erreur` : le message de la mutation
+// doit donc être posé APRÈS le rechargement.
+describe("useTickets — échec d'une mutation : rechargement et erreur conservée", () => {
+  function repoAvecMutationEnPanne(message: string) {
+    let lectures = 0;
+    const panne = async () => {
+      throw new Error(message);
+    };
+    const repo: TicketRepository = {
+      lister: async () => {
+        lectures += 1;
+        return [];
+      },
+      creer: panne,
+      changerStatut: panne,
+      supprimer: panne,
+    };
+    return { repo, lectures: () => lectures };
+  }
+
+  it("creer : recharge la liste, affiche l'erreur et résout false", async () => {
+    const { repo, lectures } = repoAvecMutationEnPanne("création refusée");
+    const { result } = renderHook(() => useTickets(repo));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+    expect(lectures()).toBe(1);
+
+    let succes: boolean | undefined;
+    await act(async () => {
+      succes = await result.current.creer({ titre: "X", demandeur: "j" });
+    });
+
+    expect(succes).toBe(false);
+    expect(lectures()).toBe(2);
+    expect(result.current.erreur).toBe("création refusée");
+  });
+
+  it("changerStatut : recharge la liste et affiche l'erreur", async () => {
+    const { repo, lectures } = repoAvecMutationEnPanne("transition refusée");
+    const { result } = renderHook(() => useTickets(repo));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+
+    await act(async () => {
+      await result.current.changerStatut("1", "En cours");
+    });
+
+    expect(lectures()).toBe(2);
+    expect(result.current.erreur).toBe("transition refusée");
+  });
+
+  it("supprimer : recharge la liste et affiche l'erreur", async () => {
+    const { repo, lectures } = repoAvecMutationEnPanne("suppression refusée");
+    const { result } = renderHook(() => useTickets(repo));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+
+    await act(async () => {
+      await result.current.supprimer("1");
+    });
+
+    expect(lectures()).toBe(2);
+    expect(result.current.erreur).toBe("suppression refusée");
+  });
+});

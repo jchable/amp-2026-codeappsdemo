@@ -25,44 +25,42 @@ export function useTickets(repo: TicketRepository) {
   }, [recharger]);
 
   // Chaque mutation capture ses propres erreurs (écriture refusée, réseau, etc.) :
-  // sans ce try/catch, un échec de mutation resterait une promesse rejetée invisible
-  // pour l'utilisateur (bug trouvé en revue avant implémentation).
-  const creer = useCallback(
-    async (input: NouveauTicket): Promise<boolean> => {
+  // sans ce try/catch, un échec resterait une promesse rejetée invisible pour l'utilisateur.
+  // Après un échec on recharge quand même : l'écriture a pu réussir côté serveur alors que
+  // la lecture de sa réponse échoue, et un nouvel essai aveugle créerait un doublon.
+  // recharger() efface `erreur` : le message de la mutation est donc posé APRÈS le rechargement.
+  const muter = useCallback(
+    async (action: () => Promise<unknown>): Promise<boolean> => {
       try {
-        await repo.creer(input);
-        await recharger();
-        return true;
+        await action();
       } catch (e) {
+        await recharger();
         setErreur(e instanceof Error ? e.message : String(e));
         return false;
       }
+      await recharger();
+      return true;
     },
-    [repo, recharger]
+    [recharger]
+  );
+
+  const creer = useCallback(
+    (input: NouveauTicket): Promise<boolean> => muter(() => repo.creer(input)),
+    [repo, muter]
   );
 
   const changerStatut = useCallback(
     async (id: string, s: Statut) => {
-      try {
-        await repo.changerStatut(id, s);
-        await recharger();
-      } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
-      }
+      await muter(() => repo.changerStatut(id, s));
     },
-    [repo, recharger]
+    [repo, muter]
   );
 
   const supprimer = useCallback(
     async (id: string) => {
-      try {
-        await repo.supprimer(id);
-        await recharger();
-      } catch (e) {
-        setErreur(e instanceof Error ? e.message : String(e));
-      }
+      await muter(() => repo.supprimer(id));
     },
-    [repo, recharger]
+    [repo, muter]
   );
 
   return { tickets, chargement, erreur, creer, changerStatut, supprimer, recharger };
