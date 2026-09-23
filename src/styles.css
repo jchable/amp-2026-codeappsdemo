@@ -1,0 +1,29 @@
+:root { --bg:#f5f7fa; --card:#fff; --ink:#1f2733; --muted:#6b7685; --bleu:#3a81ba; --haute:#963334; --moy:#d89f39; --basse:#8bab42; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: "Segoe UI", Arial, sans-serif; color:var(--ink); background:var(--bg); }
+.app { max-width: 980px; margin: 0 auto; padding: 24px; }
+header h1 { margin:0; color:var(--bleu); }
+.sous { color:var(--muted); margin:4px 0 16px; }
+.colonnes { display:grid; grid-template-columns: 1fr 320px; gap:20px; }
+@media (max-width:760px){ .colonnes{ grid-template-columns:1fr; } }
+.carte { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); }
+.liste { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
+.ticket h3 { margin:6px 0; }
+.entete { display:flex; justify-content:space-between; align-items:center; }
+.badge { font-size:12px; padding:2px 8px; border-radius:999px; color:#fff; }
+.s-nouveau{ background:var(--bleu);} .s-encours{ background:var(--moy);} .s-résolu,.s-resolu{ background:var(--basse);}
+.prio { font-size:12px; color:var(--muted); }
+.p-haute { border-left:4px solid var(--haute);} .p-moyenne{ border-left:4px solid var(--moy);} .p-basse{ border-left:4px solid var(--basse);}
+.meta { color:var(--muted); font-size:13px; margin:4px 0; }
+.actions { display:flex; gap:10px; align-items:center; margin-top:8px; }
+.filtre { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.pill { border:1px solid #d0d7de; background:#fff; border-radius:999px; padding:6px 14px; cursor:pointer; }
+.pill.actif { background:var(--bleu); color:#fff; border-color:var(--bleu); }
+.form label { display:block; margin:10px 0; font-size:14px; }
+.form input, .form select { width:100%; padding:8px; border:1px solid #d0d7de; border-radius:8px; margin-top:4px; }
+.primaire { background:var(--bleu); color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; width:100%; }
+.lien { background:none; border:0; color:var(--haute); cursor:pointer; }
+.erreurs { color:var(--haute); font-size:13px; }
+.vide { color:var(--muted); }
+.banniere { background:#eef3f8; padding:10px 14px; border-radius:8px; margin:8px 0; }
+.banniere.err { background:#fde8e8; color:var(--haute); }
