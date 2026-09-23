@@ -12,10 +12,9 @@ import {
 } from "./tokens/manifeste";
 import { BLOCS_THEME, NOMS_THEMES, PROPRIETES_PRIMITIFS, PROPRIETES_THEME } from "./tokens/themes";
 
-// Périmètre des scans CSS : le DS, les composants de l'app et les CSS à la racine de src/
-// (hors l'ancien src/styles.css, tant qu'il n'est pas supprimé).
+// Périmètre des scans CSS : le DS, les composants de l'app et les CSS à la racine de src/.
 const fichiersCss = import.meta.glob<string>(
-  ["/src/design-system/**/*.css", "/src/components/**/*.css", "/src/*.css", "!/src/styles.css"],
+  ["/src/design-system/**/*.css", "/src/components/**/*.css", "/src/*.css"],
   { query: "?raw", import: "default", eager: true }
 );
 

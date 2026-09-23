@@ -1,0 +1,12 @@
+.app-titre {
+  margin-bottom: var(--cto-space-6);
+  opacity: var(--cto-opacite-attenuee);
+}
+
+.app-affichage {
+  margin-bottom: var(--cto-space-7);
+}
+
+.app-bandeau {
+  margin-bottom: var(--cto-space-6);
+}

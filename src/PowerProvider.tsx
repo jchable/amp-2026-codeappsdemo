@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { getContext } from "@microsoft/power-apps/app";
+import { Bandeau } from "./design-system";
 
 // Même logique de bascule que App.tsx (Step 3) : en mode mémoire, aucune dépendance
 // à un hôte Power Apps n'est nécessaire, donc aucun appel SDK n'est fait ici.
@@ -22,7 +23,7 @@ export function PowerProvider({ children }: { children: ReactNode }) {
       .catch((e: unknown) => setErreur(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  if (erreur) return <div className="banniere err">Power Platform indisponible : {erreur}</div>;
-  if (!pret) return <div className="banniere">Initialisation Power Platform…</div>;
+  if (erreur) return <Bandeau ton="erreur">Power Platform indisponible : {erreur}</Bandeau>;
+  if (!pret) return <Bandeau>Initialisation Power Platform…</Bandeau>;
   return <>{children}</>;
 }

@@ -3,11 +3,13 @@ import { useTickets } from "./hooks/useTickets";
 import { InMemoryTicketRepository } from "./data/inMemoryTicketRepository";
 import { SharePointTicketRepository } from "./data/sharePointTicketRepository";
 import type { TicketRepository } from "./data/ticketRepository";
+import { Bandeau, Grille, Page, Titre } from "./design-system";
 import { Prochain } from "./components/Prochain";
 import { TicketForm } from "./components/TicketForm";
 import { TicketList } from "./components/TicketList";
 import { StatusFilter } from "./components/StatusFilter";
 import { compter, filtrerParStatut, prochainATraiter, type Statut, type Ticket } from "./domain/ticket";
+import "./App.css";
 
 // Bascule mémoire <-> SharePoint. En démo, on démarre en mémoire puis on branche SharePoint (Task 11).
 const useSharePoint = import.meta.env.VITE_USE_SHAREPOINT === "true";
@@ -22,27 +24,30 @@ export default function App() {
   const visibles = filtrerParStatut(tickets, filtre);
 
   return (
-    <div className="page">
-      <h1>Guichet des demandes aMP</h1>
-      <section className="affichage">
-        <Prochain
-          ticket={prochainATraiter(tickets)}
-          onPrendreEnCharge={(id) => changerStatut(id, "En cours")}
-        />
+    <Page data-theme="comptoir">
+      <Titre niveau={1} className="app-titre">
+        Guichet des demandes aMP
+      </Titre>
+      <Grille as="section" mode="deux-colonnes" className="app-affichage">
+        <Prochain ticket={prochainATraiter(tickets)} onPrendreEnCharge={(id) => changerStatut(id, "En cours")} />
         <TicketForm onCreer={creer} />
-      </section>
+      </Grille>
       <StatusFilter
         valeur={filtre}
         onChange={setFiltre}
         compteurs={{ Tous: tickets.length, ...compter(tickets) }}
       />
-      {erreur && <div className="banniere err">{erreur}</div>}
+      {erreur && (
+        <Bandeau ton="erreur" className="app-bandeau">
+          {erreur}
+        </Bandeau>
+      )}
       {chargement ? (
         <p>Chargement…</p>
       ) : (
         <TicketList tickets={visibles} onChangerStatut={changerStatut} onSupprimer={supprimer} />
       )}
-    </div>
+    </Page>
   );
 }
 
