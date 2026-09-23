@@ -25,10 +25,11 @@ Les organisateurs de l'aMP reçoivent des demandes (matériel, accès, incidents
 4. Liste triée par priorité décroissante puis date récente.
 5. Filtre par statut (`Tous` inclus).
 6. Un ticket peut être supprimé quel que soit son statut (`Nouveau`, `En cours`, `Résolu`).
+7. Le prochain ticket à traiter est, parmi les tickets `Nouveau`, celui de priorité la plus haute ; à priorité égale, le plus ancien. S'il n'y en a aucun, il n'y a pas de prochain ticket. (Le tri de la liste, règle 4, reste inchangé : récent d'abord.)
 
 ## Critères d'acceptation (DONE)
 - [ ] CRUD complet sur la liste SharePoint.
-- [ ] Règles 1–6 couvertes par des tests Vitest verts.
+- [ ] Règles 1–7 couvertes par des tests Vitest verts.
 - [ ] UI lisible et responsive (liste + formulaire + filtres).
 - [ ] Déployée via `pac code push`, connectée à la liste réelle.
 

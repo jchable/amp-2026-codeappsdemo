@@ -9,7 +9,7 @@ Démo « Après le vibe coding : garder le volant ». Une Power App **Code App**
 de demandes (tickets) pour les organisateurs de l'aMP, construite en **spec-driven + TDD**,
 données dans une liste **SharePoint** `Tickets`.
 
-- **La spec fait foi** : `docs/spec.md` (modèle de données, règles métier 1–6, critères DONE).
+- **La spec fait foi** : `docs/spec.md` (modèle de données, règles métier 1–7, critères DONE).
   On corrige la spec, puis le code. Jamais l'inverse.
 - Plan de tâches : `docs/superpowers/plans/` (sortie du skill `writing-plans`, une TDD strict).
   Le code a été intégralement remis à zéro pour repartir en spec-driven + TDD depuis le domaine
@@ -86,6 +86,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
   `Résolu → En cours`. **`Nouveau → Résolu` interdit.**
 - Tri : `Haute` > `Moyenne` > `Basse`, puis plus récent d'abord. Filtre par statut, `Tous` inclus.
 - Suppression : autorisée quel que soit le statut du ticket.
+- Prochain ticket à traiter : parmi les `Nouveau`, priorité la plus haute, puis le plus ancien.
 
 ## Environnement et bascule de données
 
@@ -147,7 +148,7 @@ mettre `VITE_USE_SHAREPOINT=true` et à lancer `npm run power:run`.
 Une Power App :
 - **fonctionnelle** : CRUD bout-en-bout sur la liste SharePoint réelle ;
 - **belle** : liste + formulaire + filtres, lisible et responsive ;
-- **conforme** à `docs/spec.md`, règles 1–6 couvertes par des tests ;
+- **conforme** à `docs/spec.md`, règles 1–7 couvertes par des tests ;
 - **testée** : `npm test` vert ;
 - **sans code smells** : `npm run build` passe sans erreur ni warning TypeScript ;
 - **déployée** via `npm run push`.
