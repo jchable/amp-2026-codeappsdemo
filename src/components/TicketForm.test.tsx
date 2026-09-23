@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { TicketForm } from "./TicketForm";
 
 describe("TicketForm", () => {
@@ -19,17 +19,18 @@ describe("TicketForm", () => {
     fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Depuis ce matin" } });
     fireEvent.change(screen.getByLabelText("Priorité"), { target: { value: "Haute" } });
-    fireEvent.click(screen.getByRole("button", { name: "Créer" }));
 
-    await vi.waitFor(() =>
-      expect(onCreer).toHaveBeenCalledWith({
-        titre: "VPN inaccessible",
-        demandeur: "julien",
-        description: "Depuis ce matin",
-        priorite: "Haute",
-      })
-    );
-    await vi.waitFor(() => expect(screen.getByLabelText("Titre")).toHaveValue(""));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Créer" }));
+    });
+
+    expect(onCreer).toHaveBeenCalledWith({
+      titre: "VPN inaccessible",
+      demandeur: "julien",
+      description: "Depuis ce matin",
+      priorite: "Haute",
+    });
+    expect(screen.getByLabelText("Titre")).toHaveValue("");
     expect(screen.getByLabelText("Priorité")).toHaveValue("Moyenne");
   });
 });
