@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import * as DS from "./index";
 import { couleursEnDur, proprietesDe, resoudre, variablesUtilisees, type Proprietes } from "./tokens/analyseCss";
 import { ratioContraste } from "./tokens/contraste";
 import {
@@ -98,5 +99,60 @@ describe("gouvernance — responsive", () => {
         [...css.matchAll(/@media \(max-width: (\d+)px\)/g)].filter((m) => m[1] !== String(POINT_DE_RUPTURE_PX)).map(() => chemin)
       );
     expect(autres).toEqual([]);
+  });
+});
+
+const sourcesDs = import.meta.glob<string>(
+  ["/src/design-system/**/*.{ts,tsx}", "!/src/design-system/**/*.test.{ts,tsx}"],
+  { query: "?raw", import: "default", eager: true }
+);
+
+const IMPORTS_INTERDITS = [
+  /(^|\/)domain(\/|$)/,
+  /(^|\/)data(\/|$)/,
+  /(^|\/)hooks(\/|$)/,
+  /(^|\/)generated(\/|$)/,
+  /(^|\/)components(\/|$)/,
+  /@microsoft\/power-apps/,
+  /(^|\/)App(\.tsx?)?$/,
+  /PowerProvider/,
+];
+
+function specifieurs(source: string): string[] {
+  return [...source.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1]);
+}
+
+describe("gouvernance — frontières", () => {
+  it("le DS n'importe rien du métier, du SDK, de generated/ ni de l'App", () => {
+    const fautes = Object.entries(sourcesDs).flatMap(([chemin, source]) =>
+      specifieurs(source)
+        .filter((s) => IMPORTS_INTERDITS.some((interdit) => interdit.test(s)))
+        .map((s) => `${chemin} importe ${s}`)
+    );
+    expect(fautes).toEqual([]);
+  });
+
+  it("l'index n'exporte aucune valeur autre que les composants", () => {
+    expect(Object.keys(DS).sort()).toEqual([
+      "Bandeau", "Bouton", "Champ", "ChoixSegmente", "EtatVide", "Grille",
+      "Page", "Puce", "Souche", "Surface", "Tampon", "Titre",
+    ]);
+  });
+});
+
+describe("gouvernance — accessibilité tactile", () => {
+  const INTERACTIFS = [
+    "/src/design-system/composants/Bouton/Bouton.css",
+    "/src/design-system/composants/Champ/Champ.css",
+    "/src/design-system/composants/ChoixSegmente/ChoixSegmente.css",
+    "/src/design-system/composants/Puce/Puce.css",
+  ];
+
+  it("les composants interactifs référencent la cible tactile dans un @media (pointer: coarse)", () => {
+    const fautes = INTERACTIFS.filter((chemin) => {
+      const css = fichiersCss[chemin] ?? "";
+      return !/@media \(pointer: coarse\)[\s\S]*var\(--cto-cible-tactile\)/.test(css);
+    });
+    expect(fautes).toEqual([]);
   });
 });
