@@ -1,0 +1,59 @@
+/*
+ * Contoso — niveau 1 : primitifs.
+ * Seul fichier autorisé à contenir des couleurs brutes (test de gouvernance).
+ * Les composants ne lisent jamais les couleurs d'ici : ils passent par semantiques.css.
+ */
+:root {
+  /* Couleurs */
+  --cto-teal-50: #eaf6f4;
+  --cto-teal-400: #7fb7b8;
+  --cto-teal-500: #4e8d92;
+  --cto-teal-700: #0f4c55;
+  --cto-teal-800: #0a3940;
+  --cto-teal-950: #0d2b2e;
+  --cto-corail-100: #ffe3dc;
+  --cto-corail-500: #ff7a59;
+  --cto-corail-800: #9b1c14;
+  --cto-corail-900: #7a1a0f;
+  --cto-ambre-400: #ffcb47;
+  --cto-menthe-300: #a8e0cc;
+  --cto-neutre-0: #ffffff;
+  --cto-neutre-50: #fbfefd;
+  --cto-neutre-200: #c9d8d6;
+
+  /* Espacement, base 4 px */
+  --cto-space-1: 4px;
+  --cto-space-2: 8px;
+  --cto-space-3: 12px;
+  --cto-space-4: 16px;
+  --cto-space-5: 20px;
+  --cto-space-6: 24px;
+  --cto-space-7: 28px;
+  --cto-space-8: 32px;
+
+  /* Rayons */
+  --cto-rayon-sm: 8px;
+  --cto-rayon-md: 12px;
+  --cto-rayon-lg: 16px;
+  --cto-rayon-xl: 22px;
+  --cto-rayon-pleine: 999px;
+
+  /* Typographie */
+  --cto-taille-xs: 13px;
+  --cto-taille-sm: 14px;
+  --cto-taille-md: 15px;
+  --cto-taille-lg: 17px;
+  --cto-taille-xl: 22px;
+  --cto-taille-2xl: 30px;
+  --cto-poids-normal: 400;
+  --cto-poids-moyen: 500;
+  --cto-poids-semi: 600;
+  --cto-poids-gras: 700;
+  --cto-poids-extra: 800;
+  --cto-police-titre: "Unbounded Variable", system-ui, sans-serif;
+  --cto-police-texte: "Hanken Grotesk Variable", system-ui, sans-serif;
+
+  /* Divers */
+  --cto-opacite-attenuee: 0.85;
+  --cto-cible-tactile: 44px;
+}

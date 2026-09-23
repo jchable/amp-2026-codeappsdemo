@@ -1,0 +1,81 @@
+/*
+ * Contoso — niveau 2 : tokens sémantiques, redéfinis par thème.
+ * Comptoir est le thème par défaut (posé aussi sur :root). Jour est le thème clair.
+ * Chaque thème définit exactement le même jeu de tokens (test de gouvernance).
+ */
+:root,
+[data-theme="comptoir"] {
+  --cto-fond-page: var(--cto-teal-700);
+  --cto-fond-surface: var(--cto-neutre-50);
+  --cto-fond-creux: var(--cto-teal-800);
+  --cto-fond-champ: var(--cto-neutre-0);
+  --cto-texte-principal: var(--cto-teal-50);
+  --cto-texte-sur-surface: var(--cto-teal-950);
+  --cto-texte-sur-creux: var(--cto-teal-50);
+  --cto-bordure-douce: var(--cto-teal-500);
+  --cto-bordure-pointille: var(--cto-teal-400);
+  --cto-bordure-controle-page: var(--cto-teal-400);
+  --cto-bordure-controle-surface: var(--cto-teal-500);
+  --cto-anneau-focus: var(--cto-neutre-0);
+  --cto-anneau-focus-surface: var(--cto-teal-950);
+  --cto-anneau-focus-creux: var(--cto-neutre-0);
+  --cto-action-primaire-fond: var(--cto-teal-700);
+  --cto-action-primaire-texte: var(--cto-neutre-0);
+  --cto-action-accent-fond: var(--cto-ambre-400);
+  --cto-action-accent-texte: var(--cto-teal-950);
+  --cto-selection-fond: var(--cto-teal-50);
+  --cto-selection-texte: var(--cto-teal-950);
+  --cto-priorite-haute-fond: var(--cto-corail-500);
+  --cto-priorite-moyenne-fond: var(--cto-ambre-400);
+  --cto-priorite-basse-fond: var(--cto-menthe-300);
+  --cto-priorite-neutre-fond: var(--cto-neutre-200);
+  --cto-encre-souche: var(--cto-teal-950);
+  --cto-souche-contour: transparent;
+  --cto-separateur-souche: color-mix(in srgb, var(--cto-teal-950) 40%, transparent);
+  --cto-voile-clair: color-mix(in srgb, var(--cto-neutre-0) 35%, transparent);
+  --cto-retour-erreur-fond: var(--cto-corail-100);
+  --cto-retour-erreur-texte: var(--cto-corail-900);
+  --cto-retour-erreur-texte-surface: var(--cto-corail-800);
+  --cto-retour-erreur-bordure: var(--cto-corail-500);
+  --cto-retour-info-fond: var(--cto-teal-800);
+  --cto-retour-info-texte: var(--cto-teal-50);
+  --cto-retour-info-bordure: var(--cto-teal-500);
+}
+
+[data-theme="jour"] {
+  --cto-fond-page: var(--cto-teal-50);
+  --cto-fond-surface: var(--cto-neutre-50);
+  --cto-fond-creux: var(--cto-teal-800);
+  --cto-fond-champ: var(--cto-neutre-0);
+  --cto-texte-principal: var(--cto-teal-950);
+  --cto-texte-sur-surface: var(--cto-teal-950);
+  --cto-texte-sur-creux: var(--cto-teal-50);
+  --cto-bordure-douce: var(--cto-teal-500);
+  --cto-bordure-pointille: var(--cto-teal-400);
+  --cto-bordure-controle-page: var(--cto-teal-500);
+  --cto-bordure-controle-surface: var(--cto-teal-500);
+  --cto-anneau-focus: var(--cto-teal-950);
+  --cto-anneau-focus-surface: var(--cto-teal-950);
+  --cto-anneau-focus-creux: var(--cto-neutre-0);
+  --cto-action-primaire-fond: var(--cto-teal-700);
+  --cto-action-primaire-texte: var(--cto-neutre-0);
+  --cto-action-accent-fond: var(--cto-ambre-400);
+  --cto-action-accent-texte: var(--cto-teal-950);
+  --cto-selection-fond: var(--cto-teal-950);
+  --cto-selection-texte: var(--cto-teal-50);
+  --cto-priorite-haute-fond: var(--cto-corail-500);
+  --cto-priorite-moyenne-fond: var(--cto-ambre-400);
+  --cto-priorite-basse-fond: var(--cto-menthe-300);
+  --cto-priorite-neutre-fond: var(--cto-neutre-200);
+  --cto-encre-souche: var(--cto-teal-950);
+  --cto-souche-contour: var(--cto-teal-500);
+  --cto-separateur-souche: color-mix(in srgb, var(--cto-teal-950) 40%, transparent);
+  --cto-voile-clair: color-mix(in srgb, var(--cto-neutre-0) 35%, transparent);
+  --cto-retour-erreur-fond: var(--cto-corail-100);
+  --cto-retour-erreur-texte: var(--cto-corail-900);
+  --cto-retour-erreur-texte-surface: var(--cto-corail-800);
+  --cto-retour-erreur-bordure: var(--cto-corail-500);
+  --cto-retour-info-fond: var(--cto-teal-800);
+  --cto-retour-info-texte: var(--cto-teal-50);
+  --cto-retour-info-bordure: var(--cto-teal-500);
+}

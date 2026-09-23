@@ -1,0 +1,124 @@
+/** Point de rupture responsive (px). Les variables CSS ne fonctionnent pas dans les @media : constante documentée. */
+export const POINT_DE_RUPTURE_PX = 860;
+
+export const TOKENS_PRIMITIFS_COULEUR = [
+  "--cto-teal-50",
+  "--cto-teal-400",
+  "--cto-teal-500",
+  "--cto-teal-700",
+  "--cto-teal-800",
+  "--cto-teal-950",
+  "--cto-corail-100",
+  "--cto-corail-500",
+  "--cto-corail-800",
+  "--cto-corail-900",
+  "--cto-ambre-400",
+  "--cto-menthe-300",
+  "--cto-neutre-0",
+  "--cto-neutre-50",
+  "--cto-neutre-200",
+] as const;
+
+export const TOKENS_PRIMITIFS_AUTRES = [
+  "--cto-space-1",
+  "--cto-space-2",
+  "--cto-space-3",
+  "--cto-space-4",
+  "--cto-space-5",
+  "--cto-space-6",
+  "--cto-space-7",
+  "--cto-space-8",
+  "--cto-rayon-sm",
+  "--cto-rayon-md",
+  "--cto-rayon-lg",
+  "--cto-rayon-xl",
+  "--cto-rayon-pleine",
+  "--cto-taille-xs",
+  "--cto-taille-sm",
+  "--cto-taille-md",
+  "--cto-taille-lg",
+  "--cto-taille-xl",
+  "--cto-taille-2xl",
+  "--cto-poids-normal",
+  "--cto-poids-moyen",
+  "--cto-poids-semi",
+  "--cto-poids-gras",
+  "--cto-poids-extra",
+  "--cto-police-titre",
+  "--cto-police-texte",
+  "--cto-opacite-attenuee",
+  "--cto-cible-tactile",
+] as const;
+
+export const TOKENS_SEMANTIQUES = [
+  "--cto-fond-page",
+  "--cto-fond-surface",
+  "--cto-fond-creux",
+  "--cto-fond-champ",
+  "--cto-texte-principal",
+  "--cto-texte-sur-surface",
+  "--cto-texte-sur-creux",
+  "--cto-bordure-douce",
+  "--cto-bordure-pointille",
+  "--cto-bordure-controle-page",
+  "--cto-bordure-controle-surface",
+  "--cto-anneau-focus",
+  "--cto-anneau-focus-surface",
+  "--cto-anneau-focus-creux",
+  "--cto-action-primaire-fond",
+  "--cto-action-primaire-texte",
+  "--cto-action-accent-fond",
+  "--cto-action-accent-texte",
+  "--cto-selection-fond",
+  "--cto-selection-texte",
+  "--cto-priorite-haute-fond",
+  "--cto-priorite-moyenne-fond",
+  "--cto-priorite-basse-fond",
+  "--cto-priorite-neutre-fond",
+  "--cto-encre-souche",
+  "--cto-souche-contour",
+  "--cto-separateur-souche",
+  "--cto-voile-clair",
+  "--cto-retour-erreur-fond",
+  "--cto-retour-erreur-texte",
+  "--cto-retour-erreur-texte-surface",
+  "--cto-retour-erreur-bordure",
+  "--cto-retour-info-fond",
+  "--cto-retour-info-texte",
+  "--cto-retour-info-bordure",
+] as const;
+
+/** `avantPlan` est le texte, l'icône, la bordure ou l'anneau de focus ; `fond` ce sur quoi il se détache. */
+export type PaireContraste = { avantPlan: string; fond: string; seuil: 3 | 4.5 };
+
+const p = (avantPlan: string, fond: string, seuil: 3 | 4.5): PaireContraste => ({
+  avantPlan: `--cto-${avantPlan}`,
+  fond: `--cto-${fond}`,
+  seuil,
+});
+
+const PRIORITES = ["haute", "moyenne", "basse", "neutre"] as const;
+const PRIORITES_COULEUR = ["haute", "moyenne", "basse"] as const;
+
+/** Seuils WCAG 2.2 : 4,5 texte · 3 grand texte, composant d'interface, focus. Voir spec §8. */
+export const PAIRES_CONTRASTE: readonly PaireContraste[] = [
+  p("texte-principal", "fond-page", 4.5),
+  p("texte-sur-creux", "fond-creux", 4.5),
+  p("texte-sur-surface", "fond-surface", 4.5),
+  p("texte-sur-surface", "fond-champ", 4.5),
+  ...PRIORITES.map((x) => p("encre-souche", `priorite-${x}-fond`, 4.5)),
+  p("action-primaire-texte", "action-primaire-fond", 4.5),
+  p("action-primaire-texte", "encre-souche", 4.5),
+  p("action-accent-texte", "action-accent-fond", 4.5),
+  p("selection-texte", "selection-fond", 4.5),
+  p("retour-erreur-texte", "retour-erreur-fond", 4.5),
+  p("retour-erreur-texte-surface", "fond-surface", 4.5),
+  p("retour-info-texte", "retour-info-fond", 4.5),
+  ...PRIORITES_COULEUR.map((x) => p(`priorite-${x}-fond`, "fond-creux", 3)),
+  p("bordure-controle-page", "fond-page", 3),
+  p("bordure-controle-surface", "fond-champ", 3),
+  p("anneau-focus", "fond-page", 3),
+  p("anneau-focus-creux", "fond-creux", 3),
+  p("anneau-focus-surface", "fond-surface", 3),
+  ...PRIORITES.map((x) => p("anneau-focus-surface", `priorite-${x}-fond`, 3)),
+];
