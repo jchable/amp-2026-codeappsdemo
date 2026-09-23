@@ -1,0 +1,22 @@
+.cto-surface {
+  border-radius: var(--cto-rayon-xl);
+}
+
+.cto-surface--claire {
+  padding: var(--cto-space-6);
+  border: 2px dashed var(--cto-bordure-pointille);
+  background: var(--cto-fond-surface);
+  color: var(--cto-texte-sur-surface);
+}
+.cto-surface--claire :focus-visible {
+  outline-color: var(--cto-anneau-focus-surface);
+}
+
+.cto-surface--creuse {
+  padding: var(--cto-space-6) var(--cto-space-7);
+  background: var(--cto-fond-creux);
+  color: var(--cto-texte-sur-creux);
+}
+.cto-surface--creuse :focus-visible {
+  outline-color: var(--cto-anneau-focus-creux);
+}

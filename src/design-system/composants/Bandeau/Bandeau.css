@@ -1,0 +1,18 @@
+.cto-bandeau {
+  padding: var(--cto-space-3) var(--cto-space-4);
+  border: 2px solid;
+  border-radius: var(--cto-rayon-md);
+}
+
+.cto-bandeau--info {
+  background: var(--cto-retour-info-fond);
+  color: var(--cto-retour-info-texte);
+  border-color: var(--cto-retour-info-bordure);
+}
+
+.cto-bandeau--erreur {
+  background: var(--cto-retour-erreur-fond);
+  color: var(--cto-retour-erreur-texte);
+  border-color: var(--cto-retour-erreur-bordure);
+  font-weight: var(--cto-poids-semi);
+}

@@ -1,0 +1,6 @@
+.cto-etat-vide {
+  margin: 0;
+  padding: var(--cto-space-6);
+  border: 2px dashed var(--cto-bordure-douce);
+  border-radius: var(--cto-rayon-lg);
+}
