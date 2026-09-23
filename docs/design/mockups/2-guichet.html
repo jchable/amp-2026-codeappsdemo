@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette 2 : Le guichet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --comptoir:#0F4C55; --comptoir-fonce:#0A3940; --texte:#EAF6F4; --encre:#0D2B2E;
+  --haute:#FF7A59; --moyenne:#FFCB47; --basse:#A8E0CC; --resolu:#C9D8D6; --blanc:#FBFEFD;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--comptoir);color:var(--texte);font:400 15px/1.45 "Hanken Grotesk",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.page{max-width:1180px;margin:0 auto;padding:28px 24px 72px}
+h1{margin:0 0 22px;font:800 16px "Unbounded",sans-serif;letter-spacing:.01em;opacity:.9}
+.affichage{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;margin-bottom:28px}
+.prochain{background:var(--comptoir-fonce);border-radius:22px;padding:26px 28px;display:flex;flex-direction:column;justify-content:space-between;min-height:250px}
+.prochain .lib{margin:0;font-size:15px;opacity:.85}
+.prochain .num{font:800 clamp(64px,10vw,112px)/1 "Unbounded",sans-serif;margin:6px 0 6px;color:var(--haute)}
+.prochain .num.moyenne{color:var(--moyenne)}.prochain .num.basse{color:var(--basse)}
+.prochain h2{margin:0;font:600 22px/1.3 "Hanken Grotesk";max-width:34ch}
+.prochain .qui{margin:6px 0 0;opacity:.8}
+.bouton{border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;background:var(--moyenne);color:var(--encre);margin-top:16px;align-self:flex-start}
+.bouton:hover{filter:brightness(1.06)}
+.bloc{background:var(--blanc);color:var(--encre);border-radius:22px;padding:22px 24px;border:2px dashed #7FB7B8}
+.bloc h2{margin:0 0 12px;font:800 17px "Unbounded"}
+.bloc label{display:block;font-weight:600;font-size:14px;margin-bottom:10px}
+.bloc input,.bloc textarea{display:block;width:100%;margin-top:4px;padding:9px 10px;border:1.5px solid #9BB8B9;border-radius:10px;background:#fff}
+.prios{display:flex;gap:8px;margin:2px 0 14px}
+.prios label{margin:0;flex:1}
+.prios input{position:absolute;opacity:0}
+.prios span{display:block;text-align:center;padding:9px 6px;border-radius:10px;font-weight:700;border:2px solid transparent;cursor:pointer}
+.prios .b span{background:var(--basse)}.prios .m span{background:var(--moyenne)}.prios .h span{background:var(--haute)}
+.prios input:checked+span{border-color:var(--encre);box-shadow:0 0 0 2px #fff inset}
+.prios input:focus-visible+span{outline:3px solid var(--encre);outline-offset:2px}
+.err{color:#9B1C14;font-size:13.5px;margin:0 0 10px}
+.bloc .valider{background:var(--comptoir);color:#fff;border:0;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;width:100%}
+.filtres{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.filtres button{background:transparent;border:2px solid #4E8D92;border-radius:999px;padding:8px 16px;font-weight:600;cursor:pointer}
+.filtres button[aria-pressed=true]{background:var(--texte);color:var(--encre);border-color:var(--texte)}
+.filtres b{margin-left:8px}
+.souches{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.souche{--c:var(--haute);background:var(--c);color:var(--encre);border-radius:14px;position:relative;display:flex;flex-direction:column;
+  -webkit-mask:radial-gradient(circle 10px at 0 96px,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 96px,#0000 98%,#000) right/51% 100% no-repeat;
+  mask:radial-gradient(circle 10px at 0 96px,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 10px at 100% 96px,#0000 98%,#000) right/51% 100% no-repeat}
+.souche.moyenne{--c:var(--moyenne)}.souche.basse{--c:var(--basse)}.souche.resolu{--c:var(--resolu);opacity:.92}
+.souche .tete{height:96px;padding:16px 18px 0;display:flex;justify-content:space-between;align-items:flex-start}
+.souche .n{font:800 30px/1 "Unbounded"}
+.tampon{font:700 14px "Hanken Grotesk";border:2px solid var(--encre);border-radius:8px;padding:3px 9px;transform:rotate(-5deg);background:rgba(255,255,255,.35)}
+.souche .corps{border-top:2px dashed rgba(13,43,46,.4);padding:16px 18px 18px;flex:1;display:flex;flex-direction:column}
+.souche h3{margin:0 0 6px;font:700 17px/1.3 "Hanken Grotesk"}
+.souche .qui{font-size:14px}
+.souche .desc{font-size:13.5px;margin:8px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.souche .pr{font-size:13px;font-weight:700;margin-top:10px}
+.souche .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:14px;align-items:center}
+.souche .actions button{border-radius:9px;padding:8px 11px;font-weight:700;font-size:13.5px;cursor:pointer;border:2px solid var(--encre);background:var(--encre);color:#fff}
+.souche .actions .autre{background:transparent;color:var(--encre)}
+.souche .actions .suppr{margin-left:auto;border:0;background:none;color:var(--encre);text-decoration:underline;font-weight:500;padding:8px 2px}
+.vide{grid-column:1/-1;padding:26px;border:2px dashed #4E8D92;border-radius:16px}
+.entre{animation:entre .5s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes entre{from{transform:translateY(-14px) rotate(-2deg);opacity:0}}
+@media (max-width:860px){.affichage{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.entre{animation:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Guichet des demandes aMP</h1>
+  <section class="affichage">
+    <div class="prochain" id="prochain" aria-live="polite"></div>
+    <form class="bloc" id="form" novalidate>
+      <h2>Nouvelle demande</h2>
+      <label>Titre<input name="titre" placeholder="Ex. Vidéoprojecteur en panne"></label>
+      <label>Demandeur<input name="demandeur" placeholder="Prénom Nom"></label>
+      <label>Description<textarea name="description" rows="2" placeholder="Facultatif"></textarea></label>
+      <div class="prios" role="radiogroup" aria-label="Priorité">
+        <label class="b"><input type="radio" name="priorite" value="Basse"><span>Basse</span></label>
+        <label class="m"><input type="radio" name="priorite" value="Moyenne" checked><span>Moyenne</span></label>
+        <label class="h"><input type="radio" name="priorite" value="Haute"><span>Haute</span></label>
+      </div>
+      <div id="err"></div>
+      <button class="valider" type="submit">Créer</button>
+    </form>
+  </section>
+  <div class="filtres" id="filtres" role="group" aria-label="Filtrer par statut"></div>
+  <main class="souches" id="souches"></main>
+</div>
+<script src="store.js"></script>
+<script>
+let filtre="Tous", derniere=null;
+const $=(s)=>document.querySelector(s);
+function souche(t){
+  const p=t.statut==="Résolu"?"resolu":t.priorite.toLowerCase();
+  const boutons=Store.transitions(t.statut).map((v,i)=>`<button type="button" class="${i===0?'':'autre'}" data-id="${t.id}" data-vers="${v}">${Store.verbe(t.statut,v)}</button>`).join("");
+  return `<article class="souche ${p} ${derniere===t.id?'entre':''}">
+    <div class="tete"><span class="n">N° ${t.id}</span><span class="tampon">${t.statut}</span></div>
+    <div class="corps"><h3>${Store.esc(t.titre)}</h3>
+      <div class="qui">${Store.esc(t.demandeur)}, ${Store.quand(t.creeLe)}</div>
+      ${t.description?`<p class="desc">${Store.esc(t.description)}</p>`:""}
+      <div class="pr">Priorité ${t.priorite.toLowerCase()}</div>
+      <div class="actions">${boutons}<button type="button" class="suppr" data-suppr="${t.id}">Supprimer</button></div></div></article>`;
+}
+function rendre(){
+  const c=Store.compter();
+  $("#filtres").innerHTML=["Tous",...Store.STATUTS].map(s=>`<button type="button" data-f="${s}" aria-pressed="${s===filtre}">${s}<b>${c[s]}</b></button>`).join("");
+  const l=Store.liste(filtre);
+  $("#souches").innerHTML=l.length?l.map(souche).join(""):`<p class="vide">Aucune demande dans ce statut. Le guichet est calme.</p>`;
+  const suivant=Store.liste("Nouveau")[0];
+  $("#prochain").innerHTML=suivant?`<div><p class="lib">Prochain à prendre en charge</p><div class="num ${suivant.priorite.toLowerCase()}">N° ${suivant.id}</div>
+    <h2>${Store.esc(suivant.titre)}</h2><p class="qui">Priorité ${suivant.priorite.toLowerCase()}, demandé par ${Store.esc(suivant.demandeur)} ${Store.quand(suivant.creeLe)}</p></div>
+    <button class="bouton" type="button" data-id="${suivant.id}" data-vers="En cours">Prendre en charge</button>`
+    :`<div><p class="lib">Prochain à prendre en charge</p><h2>Rien en attente. Toutes les demandes sont prises en charge.</h2></div>`;
+  derniere=null;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.f){filtre=b.dataset.f;rendre()}
+  else if(b.dataset.vers){derniere=b.dataset.id;Store.changerStatut(b.dataset.id,b.dataset.vers)}
+  else if(b.dataset.suppr){Store.supprimer(b.dataset.suppr)}
+});
+$("#form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const r=Store.creer(Object.fromEntries(new FormData(e.target)));
+  if(!r.ok){$("#err").innerHTML=r.erreurs.map(x=>`<p class="err">${x}</p>`).join("");return}
+  $("#err").innerHTML="";e.target.reset();
+});
+Store.onChange(rendre);rendre();
+</script>
+</body>
+</html>

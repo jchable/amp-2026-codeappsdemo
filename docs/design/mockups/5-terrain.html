@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette 5 : Le terrain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<style>
+:root{
+  --encre:#0B1220; --doux:#4B5565; --fond:#F3F5F9; --nouveau:#2447F5; --encours:#FFB000; --resolu:#0B7A43;
+  --haute:#C1121F; --moy:#B7791F; --basse:#8792A2; --danger:#B42318;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#DDE2EA;color:var(--encre);font:400 16px/1.4 "Archivo",system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 12px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--encre);outline-offset:2px}
+.tel{width:100%;max-width:430px;background:var(--fond);border-radius:30px;box-shadow:0 20px 50px rgba(11,18,32,.25);overflow:hidden;position:relative;display:flex;flex-direction:column;min-height:820px}
+.haut{position:sticky;top:0;z-index:2;background:var(--fond);padding:16px 16px 12px}
+.haut h1{margin:0 0 10px;font:800 20px "Archivo";font-stretch:110%;letter-spacing:-.01em}
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tuile{border:0;border-radius:14px;padding:12px 12px 10px;text-align:left;cursor:pointer;color:#fff;min-height:88px;display:flex;flex-direction:column;justify-content:space-between;border:3px solid transparent}
+.tuile .n{font:900 44px/1 "Archivo";font-stretch:125%}
+.tuile .l{font-weight:600;font-size:15px}
+.tuile.Nouveau{background:var(--nouveau)}.tuile.En{background:var(--encours);color:var(--encre)}.tuile.Résolu{background:var(--resolu)}
+.tuile[aria-pressed=true]{border-color:var(--encre);box-shadow:0 0 0 3px #fff inset}
+.tous{display:block;margin:10px 0 0;background:none;border:0;font-weight:700;padding:6px 0;text-decoration:underline;cursor:pointer}
+.tous[aria-pressed=true]{text-decoration:none;background:var(--encre);color:#fff;border-radius:999px;padding:6px 14px}
+.cartes{padding:4px 16px 110px;display:flex;flex-direction:column;gap:12px;flex:1}
+.carte{background:#fff;border-radius:16px;padding:14px 16px 14px 20px;position:relative;box-shadow:0 1px 0 rgba(11,18,32,.08)}
+.carte::before{content:"";position:absolute;left:0;top:12px;bottom:12px;border-radius:0 4px 4px 0;width:6px;background:var(--basse)}
+.carte.Haute::before{background:var(--haute);width:10px}.carte.Moyenne::before{background:var(--moy);width:7px}
+.carte h3{margin:0;font:700 18px/1.25 "Archivo"}
+.carte .qui{color:var(--doux);font-size:14.5px;margin-top:4px}
+.carte .prio{display:inline-block;margin-top:8px;font-weight:700;font-size:14px}
+.carte .prio.Haute{color:var(--haute)}.carte .prio.Moyenne{color:#8A5D00}.carte .prio.Basse{color:var(--doux)}
+.statutlbl{float:right;font-weight:700;font-size:13.5px;padding:3px 9px;border-radius:999px;background:var(--fond)}
+.grand{display:block;width:100%;margin-top:14px;min-height:52px;border-radius:12px;border:0;font-weight:800;font-size:17px;cursor:pointer;background:var(--encre);color:#fff}
+.grand.Résolu{background:var(--resolu)}.grand.En{background:var(--encours);color:var(--encre)}
+.plus{margin-top:10px}
+.plus summary{cursor:pointer;font-weight:600;color:var(--doux);padding:10px 0;min-height:44px;display:flex;align-items:center}
+.plus .rang{display:flex;gap:10px;flex-wrap:wrap;padding-bottom:4px}
+.plus button{min-height:44px;padding:0 14px;border-radius:10px;border:1.5px solid #9AA4B4;background:#fff;font-weight:600;cursor:pointer}
+.plus .sup{color:var(--danger);border-color:var(--danger)}
+.vide{padding:30px 10px;text-align:center;color:var(--doux)}
+.fab{position:fixed;bottom:18px;right:max(16px,calc(50% - 215px + 16px));z-index:3;background:var(--encre);color:#fff;border:0;border-radius:999px;min-height:56px;padding:0 22px;font-weight:800;font-size:17px;box-shadow:0 8px 20px rgba(11,18,32,.35);cursor:pointer}
+dialog{border:0;padding:0;width:100%;max-width:430px;margin:auto auto 0;border-radius:24px 24px 0 0;background:#fff;color:var(--encre)}
+dialog::backdrop{background:rgba(11,18,32,.5)}
+dialog[open]{animation:monte .28s ease-out}
+@keyframes monte{from{transform:translateY(40%);opacity:.4}}
+.feuille{padding:22px 18px 24px}
+.feuille h2{margin:0 0 14px;font:800 22px "Archivo"}
+.feuille label{display:block;font-weight:700;margin-bottom:12px}
+.feuille input,.feuille textarea{display:block;width:100%;margin-top:5px;padding:13px 12px;border:2px solid #9AA4B4;border-radius:12px;background:#fff;font-weight:400}
+.pr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.pr label{margin:0}.pr input{position:absolute;opacity:0}
+.pr span{display:block;text-align:center;padding:13px 6px;border-radius:12px;border:2px solid #9AA4B4;font-weight:700;cursor:pointer;min-height:48px}
+.pr input:checked+span{background:var(--encre);border-color:var(--encre);color:#fff}
+.pr input:focus-visible+span{outline:3px solid var(--encre);outline-offset:2px}
+.err{color:var(--danger);font-weight:600;margin:0 0 10px}
+.rangeb{display:grid;grid-template-columns:1fr 2fr;gap:10px}
+.rangeb button{min-height:52px;border-radius:12px;font-weight:800;font-size:17px;cursor:pointer;border:2px solid var(--encre);background:#fff}
+.rangeb .ok{background:var(--encre);color:#fff}
+.bip{animation:bip .6s ease-out}
+@keyframes bip{from{box-shadow:0 0 0 4px var(--encours)}}
+@media (max-width:480px){body{padding:0;background:var(--fond)}.tel{border-radius:0;box-shadow:none;min-height:100vh}}
+@media (prefers-reduced-motion:reduce){dialog[open],.bip{animation:none}}
+</style>
+</head>
+<body>
+<div class="tel">
+  <header class="haut">
+    <h1>Demandes aMP</h1>
+    <div class="score" id="score" role="group" aria-label="Filtrer par statut"></div>
+    <button class="tous" id="tous" type="button"></button>
+  </header>
+  <main class="cartes" id="cartes"></main>
+  <button class="fab" id="ouvrir" type="button">+ Nouvelle demande</button>
+</div>
+<dialog id="feuille" aria-labelledby="ft">
+  <form class="feuille" id="form" method="dialog" novalidate>
+    <h2 id="ft">Nouvelle demande</h2>
+    <label>Titre<input name="titre" autocomplete="off" placeholder="Ex. Vidéoprojecteur en panne"></label>
+    <label>Demandeur<input name="demandeur" autocomplete="off" placeholder="Prénom Nom"></label>
+    <label>Description<textarea name="description" rows="2" placeholder="Facultatif"></textarea></label>
+    <div class="pr" role="radiogroup" aria-label="Priorité">
+      <label><input type="radio" name="priorite" value="Basse"><span>Basse</span></label>
+      <label><input type="radio" name="priorite" value="Moyenne" checked><span>Moyenne</span></label>
+      <label><input type="radio" name="priorite" value="Haute"><span>Haute</span></label>
+    </div>
+    <div id="err"></div>
+    <div class="rangeb"><button type="button" id="fermer">Annuler</button><button class="ok" type="submit">Créer</button></div>
+  </form>
+</dialog>
+<script src="store.js"></script>
+<script>
+let filtre="Tous", dernier=null;
+const $=(s)=>document.querySelector(s);
+const cle=(s)=>s==="En cours"?"En":s;
+function carte(t){
+  const [main,...autres]=Store.transitions(t.statut);
+  const rang=autres.map(v=>`<button type="button" data-id="${t.id}" data-vers="${v}">${Store.verbe(t.statut,v)}</button>`).join("");
+  return `<article class="carte ${t.priorite} ${dernier===t.id?'bip':''}"><span class="statutlbl">${t.statut}</span>
+    <h3>${Store.esc(t.titre)}</h3><div class="qui">${Store.esc(t.demandeur)}, ${Store.quand(t.creeLe)}</div><span class="prio ${t.priorite}">Priorité ${t.priorite.toLowerCase()}</span>
+    <button class="grand ${cle(main)}" type="button" data-id="${t.id}" data-vers="${main}">${Store.verbe(t.statut,main)}</button>
+    <details class="plus"><summary>Plus d'actions</summary><div class="rang">${rang}<button class="sup" type="button" data-suppr="${t.id}">Supprimer</button></div></details></article>`;
+}
+function rendre(){
+  const c=Store.compter();
+  $("#score").innerHTML=Store.STATUTS.map(s=>`<button class="tuile ${cle(s)}" type="button" data-f="${s}" aria-pressed="${s===filtre}"><span class="n">${c[s]}</span><span class="l">${s}</span></button>`).join("");
+  $("#tous").textContent=`Toutes les demandes (${c.Tous})`;$("#tous").setAttribute("aria-pressed",filtre==="Tous");
+  const l=Store.liste(filtre);
+  $("#cartes").innerHTML=l.length?l.map(carte).join(""):`<p class="vide">Rien ici pour le moment. Touchez « Nouvelle demande » pour en ajouter une.</p>`;
+  dernier=null;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.f){filtre=filtre===b.dataset.f?"Tous":b.dataset.f;rendre()}
+  else if(b.id==="tous"){filtre="Tous";rendre()}
+  else if(b.id==="ouvrir"){$("#feuille").showModal()}
+  else if(b.id==="fermer"){$("#feuille").close()}
+  else if(b.dataset.vers){dernier=b.dataset.id;Store.changerStatut(b.dataset.id,b.dataset.vers)}
+  else if(b.dataset.suppr){Store.supprimer(b.dataset.suppr)}
+});
+$("#form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const r=Store.creer(Object.fromEntries(new FormData(e.target)));
+  if(!r.ok){$("#err").innerHTML=r.erreurs.map(x=>`<p class="err">${x}</p>`).join("");return}
+  $("#err").innerHTML="";e.target.reset();$("#feuille").close();
+});
+Store.onChange(rendre);rendre();
+</script>
+</body>
+</html>

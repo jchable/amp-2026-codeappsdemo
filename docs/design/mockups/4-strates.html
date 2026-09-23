@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette 4 : Les strates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Onest:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --haute:#14213D; --moyenne:#3E5C84; --basse:#DCE6F0; --encre:#14213D; --jaune:#FFB703; --blanc:#fff; --danger:#FFB4A8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--encre);font:400 15px/1.45 "Onest",system-ui,sans-serif}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--jaune);outline-offset:2px}
+.entete{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 28px;padding:20px 28px 0}
+.entete h1{margin:0;font:800 34px/1 "Big Shoulders Display";letter-spacing:.01em}
+.onglets{display:flex;gap:18px;flex-wrap:wrap}
+.onglets button{background:none;border:0;padding:6px 0;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;color:#4A5B7A}
+.onglets button[aria-pressed=true]{color:var(--encre);border-color:var(--jaune)}
+.onglets b{margin-left:6px}
+.saisie{display:grid;grid-template-columns:2fr 1fr auto auto;gap:10px;align-items:end;padding:16px 28px 20px;border-bottom:1px solid #D5DDE8}
+.saisie label{font-size:13px;font-weight:600;display:block}
+.saisie input{display:block;width:100%;margin-top:3px;padding:9px 10px;border:1.5px solid #8FA1BC;border-radius:6px;background:#fff}
+.pastilles{display:flex;gap:6px}
+.pastilles label{margin:0}
+.pastilles input{position:absolute;opacity:0}
+.pastilles span{display:block;padding:9px 11px;border-radius:6px;border:1.5px solid #8FA1BC;cursor:pointer;font-weight:600;font-size:14px}
+.pastilles input:checked+span{background:var(--encre);color:#fff;border-color:var(--encre)}
+.pastilles input:focus-visible+span{outline:3px solid var(--jaune);outline-offset:2px}
+.saisie .ok{background:var(--jaune);border:0;border-radius:6px;padding:11px 18px;font-weight:700;cursor:pointer;color:var(--encre)}
+.erreur{grid-column:1/-1;color:#9B1C14;font-weight:600;margin:0}
+.strate{display:grid;grid-template-columns:150px 1fr;min-height:120px}
+.strate.haute{background:var(--haute);color:#fff}
+.strate.moyenne{background:var(--moyenne);color:#fff}
+.strate.basse{background:var(--basse);color:var(--encre)}
+.niveau{padding:22px 0 22px 28px;display:flex;flex-direction:column;justify-content:space-between}
+.niveau h2{margin:0;font:800 clamp(40px,6vw,64px)/.9 "Big Shoulders Display";writing-mode:vertical-rl;transform:rotate(180deg);align-self:flex-start;letter-spacing:.01em}
+.niveau .nb{font:800 34px "Big Shoulders Display";opacity:.85}
+.rangees{padding:8px 28px 8px 0}
+.rangee{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.2fr) 150px auto;gap:6px 18px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.22)}
+.strate.basse .rangee{border-color:rgba(20,33,61,.18)}
+.rangee:last-child{border-bottom:0}
+.rangee h3{margin:0;font:600 16px/1.3 "Onest"}
+.rangee .desc{margin:2px 0 0;font-size:13.5px;opacity:.85}
+.rangee .qui{font-size:14px;opacity:.9}
+.piste{display:flex;gap:5px}
+.piste button{width:44px;height:14px;border-radius:7px;border:2px solid currentColor;background:transparent;padding:0;cursor:pointer}
+.piste button.plein{background:currentColor;cursor:default}
+.piste button.actuel{background:var(--jaune);border-color:var(--jaune)}
+.piste button:disabled{opacity:.35;cursor:not-allowed}
+.statut{font-size:13px;font-weight:600;margin-top:4px}
+.sup{background:none;border:0;text-decoration:underline;cursor:pointer;font-size:13.5px;padding:6px 2px}
+.strate.haute .sup,.strate.moyenne .sup{color:var(--danger)}
+.strate.basse .sup{color:#8B1A10}
+.vide{margin:0;padding:22px 0;opacity:.9}
+.mv{animation:mv .55s ease-out}
+@keyframes mv{from{background:rgba(255,183,3,.35)}}
+@media (max-width:860px){
+  .saisie{grid-template-columns:1fr}
+  .strate{grid-template-columns:1fr}
+  .niveau{flex-direction:row;align-items:baseline;padding:16px 20px 0}
+  .niveau h2{writing-mode:horizontal-tb;transform:none;font-size:40px}
+  .rangees{padding:4px 20px 12px}
+  .rangee{grid-template-columns:1fr auto}
+  .rangee .qui{grid-column:1}.piste{grid-column:1}.sup{grid-column:2;grid-row:1}
+}
+@media (prefers-reduced-motion:reduce){.mv{animation:none}}
+</style>
+</head>
+<body>
+<header class="entete">
+  <h1>Demandes aMP</h1>
+  <div class="onglets" id="onglets" role="group" aria-label="Filtrer par statut"></div>
+</header>
+<form class="saisie" id="form" novalidate aria-label="Nouvelle demande">
+  <label>Nouvelle demande<input name="titre" placeholder="Ex. Vidéoprojecteur en panne"></label>
+  <label>Demandeur<input name="demandeur" placeholder="Prénom Nom"></label>
+  <div class="pastilles" role="radiogroup" aria-label="Priorité">
+    <label><input type="radio" name="priorite" value="Basse"><span>Basse</span></label>
+    <label><input type="radio" name="priorite" value="Moyenne" checked><span>Moyenne</span></label>
+    <label><input type="radio" name="priorite" value="Haute"><span>Haute</span></label>
+  </div>
+  <button class="ok" type="submit">Créer</button>
+  <p class="erreur" id="err"></p>
+</form>
+<main id="strates"></main>
+<script src="store.js"></script>
+<script>
+let filtre="Tous", dernier=null;
+const $=(s)=>document.querySelector(s);
+const NOMS={Haute:"Haute",Moyenne:"Moyenne",Basse:"Basse"};
+function piste(t){
+  const idx=Store.STATUTS.indexOf(t.statut);
+  return `<div class="piste" role="group" aria-label="Statut de ${Store.esc(t.titre)}">`+Store.STATUTS.map((s,i)=>{
+    if(s===t.statut)return `<button class="actuel" type="button" aria-current="step" title="${s}" aria-label="${s} (actuel)"></button>`;
+    const ok=Store.transitions(t.statut).includes(s);
+    if(!ok)return `<button type="button" disabled title="${s} : passez d'abord par En cours" aria-label="${s} (impossible depuis ${t.statut})"></button>`;
+    return `<button type="button" data-id="${t.id}" data-vers="${s}" title="${Store.verbe(t.statut,s)}" aria-label="${Store.verbe(t.statut,s)}"></button>`;
+  }).join("")+`</div><div class="statut">${t.statut}</div>`;
+}
+function rangee(t){
+  return `<div class="rangee ${dernier===t.id?'mv':''}"><div><h3>${Store.esc(t.titre)}</h3>${t.description?`<p class="desc">${Store.esc(t.description)}</p>`:""}</div>
+    <div class="qui">${Store.esc(t.demandeur)}<br>${Store.quand(t.creeLe)}</div><div>${piste(t)}</div>
+    <button class="sup" type="button" data-suppr="${t.id}">Supprimer</button></div>`;
+}
+function rendre(){
+  const c=Store.compter();
+  $("#onglets").innerHTML=["Tous",...Store.STATUTS].map(s=>`<button type="button" data-f="${s}" aria-pressed="${s===filtre}">${s}<b>${c[s]}</b></button>`).join("");
+  const tous=Store.liste(filtre);
+  $("#strates").innerHTML=["Haute","Moyenne","Basse"].map(p=>{
+    const l=tous.filter(t=>t.priorite===p);
+    return `<section class="strate ${p.toLowerCase()}" aria-label="Priorité ${p.toLowerCase()}"><div class="niveau"><h2>${NOMS[p]}</h2><span class="nb">${l.length}</span></div>
+      <div class="rangees">${l.length?l.map(rangee).join(""):`<p class="vide">Aucune demande de priorité ${p.toLowerCase()}${filtre==="Tous"?"":" dans ce statut"}.</p>`}</div></section>`;
+  }).join("");
+  dernier=null;
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.f){filtre=b.dataset.f;rendre()}
+  else if(b.dataset.vers){dernier=b.dataset.id;Store.changerStatut(b.dataset.id,b.dataset.vers)}
+  else if(b.dataset.suppr){Store.supprimer(b.dataset.suppr)}
+});
+$("#form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const r=Store.creer(Object.fromEntries(new FormData(e.target)));
+  if(!r.ok){$("#err").textContent=r.erreurs.join(" ");return}
+  $("#err").textContent="";e.target.reset();
+});
+Store.onChange(rendre);rendre();
+</script>
+</body>
+</html>
