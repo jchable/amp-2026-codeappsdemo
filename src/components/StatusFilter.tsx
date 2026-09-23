@@ -1,5 +1,7 @@
 import type { Statut } from "../domain/ticket";
 import { STATUTS } from "../domain/ticket";
+import { Puce } from "../design-system";
+import "./StatusFilter.css";
 
 export function StatusFilter({
   valeur,
@@ -12,12 +14,11 @@ export function StatusFilter({
 }) {
   const options: (Statut | "Tous")[] = ["Tous", ...STATUTS];
   return (
-    <div className="filtres" role="group" aria-label="Filtrer par statut">
+    <div className="app-filtres" role="group" aria-label="Filtrer par statut">
       {options.map((o) => (
-        <button key={o} type="button" onClick={() => onChange(o)} aria-pressed={o === valeur}>
+        <Puce key={o} actif={o === valeur} compteur={compteurs[o]} onClick={() => onChange(o)}>
           {o}
-          <b>{compteurs[o]}</b>
-        </button>
+        </Puce>
       ))}
     </div>
   );

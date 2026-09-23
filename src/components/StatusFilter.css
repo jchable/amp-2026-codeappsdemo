@@ -1,0 +1,6 @@
+.app-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cto-space-2);
+  margin-bottom: var(--cto-space-6);
+}

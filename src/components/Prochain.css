@@ -1,0 +1,40 @@
+.app-prochain {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 250px;
+}
+
+.app-prochain__lib {
+  margin: 0;
+  font-size: var(--cto-taille-md);
+  opacity: var(--cto-opacite-attenuee);
+}
+
+.app-prochain__num {
+  margin: var(--cto-space-2) 0;
+  font: var(--cto-poids-extra) clamp(64px, 10vw, 112px) / 1 var(--cto-police-titre);
+}
+.app-prochain__num--haute {
+  color: var(--cto-priorite-haute-fond);
+}
+.app-prochain__num--moyenne {
+  color: var(--cto-priorite-moyenne-fond);
+}
+.app-prochain__num--basse {
+  color: var(--cto-priorite-basse-fond);
+}
+
+.app-prochain__titre {
+  max-width: 34ch;
+}
+
+.app-prochain__qui {
+  margin: var(--cto-space-2) 0 0;
+  opacity: var(--cto-opacite-attenuee);
+}
+
+.app-prochain__action {
+  align-self: flex-start;
+  margin-top: var(--cto-space-4);
+}
