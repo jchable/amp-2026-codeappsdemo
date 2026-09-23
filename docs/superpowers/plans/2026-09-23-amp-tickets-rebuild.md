@@ -1463,15 +1463,19 @@ Note : selon la politique de `.gitignore` du modèle `pac code`, le dossier gén
 
 ## Task 10: Mapping SharePoint pur (TDD) — fromSharePoint / toSharePoint
 
+> **Révisé après génération réelle (Task 9).** Le contrat ci-dessous n'est plus une hypothèse : il a été vérifié en lisant directement `src/generated/models/TicketsModel.ts` (le modèle réellement produit par `pac code add-data-source` contre la liste `Tickets` réelle). Deux points divergent de la documentation historique de `CLAUDE.md` :
+> 1. **Asymétrie lecture/écriture confirmée.** En lecture (`TicketsRead`), `Statut`/`Priorite` sont des objets `{ "@odata.type", Value, Id }`. En écriture (`TicketsWrite`), ce sont des **chaînes brutes** (`Statut?: string`), pas des objets `{ Value }` — contrairement à ce que `CLAUDE.md` documentait jusqu'ici. Ce Task lit donc un objet mais écrit une chaîne.
+> 2. **Champs optionnels dans le modèle réel.** `TicketsBase` (dont hérite `TicketsRead`) déclare `ID?`, `Title?`, `Statut?`, `Priorite?`, `Created?` comme optionnels — le mapping doit donc valider explicitement leur présence plutôt que de les supposer toujours renseignés.
+
 **Files:**
 - Create: `src/data/sharePointMapping.ts`
 - Test: `src/data/sharePointMapping.test.ts`
 
 **Interfaces:**
-- Consumes: `Ticket`, `Statut`, `Priorite` (Task 1).
-- Produces: `interface SharePointTicketRecord`, `fromSharePoint(record: SharePointTicketRecord): Ticket`, `toSharePoint(ticket: Ticket): SharePointTicketPayload`.
+- Consumes: `Ticket`, `Statut`, `Priorite`, `STATUTS`, `PRIORITES` (Task 1).
+- Produces: `interface SharePointTicketRecord`, `interface SharePointTicketPayload`, `fromSharePoint(record: SharePointTicketRecord): Ticket`, `toSharePoint(ticket: Ticket): SharePointTicketPayload`.
 
-Ces fonctions sont **pures** (aucun import SDK ni `generated/`) : elles sont testables sans mock, contrairement au reste de l'adaptateur SharePoint — conforme à la règle 2 (le SDK n'est jamais appelé dans les tests). Les noms de champs ci-dessous suivent l'hypothèse documentée dans `CLAUDE.md` (§ « Brancher SharePoint ») ; **si l'inspection du modèle généré au Task 9-Step 7 a révélé des noms différents, adapter ce Task avant de l'exécuter.**
+Ces fonctions restent **pures** (aucun import SDK, et — choix délibéré — aucun import direct de `src/generated/` non plus, même pour un type) : elles sont testables sans mock, et gardent `sharePointTicketRepository.ts` comme seule porte vers `generated/` (règle 4). `SharePointTicketRecord`/`SharePointTicketPayload` sont donc des interfaces maintenues à la main ici, mais leur forme est désormais copiée fidèlement sur le modèle réel `src/generated/models/TicketsModel.ts` plutôt que devinée — Task 11 passera des valeurs `TicketsRead`/`TicketsWrite` réelles à ces fonctions ; TypeScript acceptera l'affectation par typage structurel (`TicketsRead` a une forme compatible, avec des champs en plus, ce qui est licite sans cast).
 
 - [ ] **Step 1: Écrire les tests rouges**
 
@@ -1506,7 +1510,7 @@ describe("fromSharePoint", () => {
     const record: SharePointTicketRecord = {
       ID: 1,
       Title: "T",
-      Description: null,
+      Description: undefined,
       Statut: { Value: "Nouveau" },
       Priorite: { Value: "Moyenne" },
       Demandeur: "j",
@@ -1514,10 +1518,21 @@ describe("fromSharePoint", () => {
     };
     expect(fromSharePoint(record).description).toBe("");
   });
+
+  it("lève une erreur explicite si un champ obligatoire est absent (ex. ID)", () => {
+    const record: SharePointTicketRecord = {
+      Title: "T",
+      Statut: { Value: "Nouveau" },
+      Priorite: { Value: "Moyenne" },
+      Demandeur: "j",
+      Created: "2026-09-23T08:00:00Z",
+    };
+    expect(() => fromSharePoint(record)).toThrow(/Champ SharePoint manquant : ID/);
+  });
 });
 
 describe("toSharePoint", () => {
-  it("envoie les colonnes Choix sous forme d'objet { Value } et omet l'id", () => {
+  it("envoie Statut/Priorite en chaînes brutes (pas en objet { Value }) et omet l'id", () => {
     const ticket = {
       id: "42",
       titre: "VPN inaccessible",
@@ -1530,14 +1545,14 @@ describe("toSharePoint", () => {
     expect(toSharePoint(ticket)).toEqual({
       Title: "VPN inaccessible",
       Description: "Ne se connecte plus",
-      Statut: { Value: "En cours" },
-      Priorite: { Value: "Haute" },
+      Statut: "En cours",
+      Priorite: "Haute",
       Demandeur: "julien",
     });
   });
 });
 
-describe("fromSharePoint — valeurs distantes invalides (règle 5 rigueur)", () => {
+describe("fromSharePoint — valeurs distantes invalides (rigueur)", () => {
   it("lève une erreur explicite si la colonne Statut contient une valeur inconnue", () => {
     const record: SharePointTicketRecord = {
       ID: 1,
@@ -1568,7 +1583,7 @@ describe("fromSharePoint — valeurs distantes invalides (règle 5 rigueur)", ()
 
 - [ ] **Step 2: Lancer les tests, vérifier l'échec**
 
-Run: `npx vitest run src/data/sharePointMapping.test.ts`
+Run: `npx vitest run src/data/sharePointMapping.test.ts` (ajouter `-- --no-file-parallelism` si une erreur `spawn UNKNOWN` apparaît — condition d'environnement connue, sans rapport avec le code, voir note du Task 9)
 Expected: FAIL — `Cannot find module './sharePointMapping'`.
 
 - [ ] **Step 3: Implémenter**
@@ -1576,7 +1591,9 @@ Expected: FAIL — `Cannot find module './sharePointMapping'`.
 ```typescript
 // src/data/sharePointMapping.ts
 // Mapping PUR colonnes SharePoint <-> domaine. Aucun import SDK ni generated/ ici :
-// testable sans mock (règle 2 du projet).
+// testable sans mock (règle 2 du projet). Forme copiée fidèlement sur le modèle
+// réellement généré (src/generated/models/TicketsModel.ts, vérifié au Task 9) —
+// pas une hypothèse.
 import type { Ticket, Statut, Priorite } from "../domain/ticket";
 import { STATUTS, PRIORITES } from "../domain/ticket";
 
@@ -1584,22 +1601,32 @@ export interface SharePointChoice {
   Value: string;
 }
 
+// Optionnalité alignée sur TicketsBase (modèle généré réel) : SharePoint peut en
+// théorie omettre ces champs (ex. $select restreint) — on valide leur présence
+// explicitement plutôt que de la supposer.
 export interface SharePointTicketRecord {
-  ID: number;
-  Title: string;
-  Description: string | null;
-  Statut: SharePointChoice;
-  Priorite: SharePointChoice;
+  ID?: number;
+  Title?: string;
+  Description?: string;
+  Statut?: SharePointChoice;
+  Priorite?: SharePointChoice;
   Demandeur: string;
-  Created: string;
+  Created?: string;
 }
 
+// Écriture : Statut/Priorite sont des CHAÎNES BRUTES dans le modèle généré réel
+// (TicketsWrite), pas des objets { Value } — asymétrie confirmée avec la lecture.
 export interface SharePointTicketPayload {
   Title: string;
   Description: string;
-  Statut: SharePointChoice;
-  Priorite: SharePointChoice;
+  Statut: string;
+  Priorite: string;
   Demandeur: string;
+}
+
+function champObligatoire<T>(valeur: T | undefined, nom: string): T {
+  if (valeur === undefined) throw new Error(`Champ SharePoint manquant : ${nom}.`);
+  return valeur;
 }
 
 // Point corrigé après revue : un cast `as Statut`/`as Priorite` accepterait
@@ -1618,14 +1645,19 @@ function assertPriorite(value: string): Priorite {
 }
 
 export function fromSharePoint(record: SharePointTicketRecord): Ticket {
+  const id = champObligatoire(record.ID, "ID");
+  const titre = champObligatoire(record.Title, "Title");
+  const statut = champObligatoire(record.Statut, "Statut");
+  const priorite = champObligatoire(record.Priorite, "Priorite");
+  const creeLe = champObligatoire(record.Created, "Created");
   return {
-    id: String(record.ID),
-    titre: record.Title,
+    id: String(id),
+    titre,
     description: record.Description ?? "",
-    statut: assertStatut(record.Statut.Value),
-    priorite: assertPriorite(record.Priorite.Value),
+    statut: assertStatut(statut.Value),
+    priorite: assertPriorite(priorite.Value),
     demandeur: record.Demandeur,
-    creeLe: record.Created,
+    creeLe,
   };
 }
 
@@ -1633,8 +1665,8 @@ export function toSharePoint(ticket: Ticket): SharePointTicketPayload {
   return {
     Title: ticket.titre,
     Description: ticket.description,
-    Statut: { Value: ticket.statut },
-    Priorite: { Value: ticket.priorite },
+    Statut: ticket.statut,
+    Priorite: ticket.priorite,
     Demandeur: ticket.demandeur,
   };
 }
@@ -1643,41 +1675,36 @@ export function toSharePoint(ticket: Ticket): SharePointTicketPayload {
 - [ ] **Step 4: Lancer tous les tests, vérifier le succès**
 
 Run: `npm test`
-Expected: PASS (tous les tests précédents + les 5 tests de `sharePointMapping.test.ts`).
+Expected: PASS (tous les tests précédents + les 6 tests de `sharePointMapping.test.ts`).
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/data/sharePointMapping.ts src/data/sharePointMapping.test.ts
-git commit -m "feat(data): mapping pur SharePoint <-> domaine, testé sans SDK"
+git commit -m "feat(data): mapping pur SharePoint <-> domaine (contrat réel post-génération), testé sans SDK"
 ```
 
 ---
 
 ## Task 11: Câblage `SharePointTicketRepository` + bascule + vérification `power:run`
 
+> **Révisé après génération réelle (Task 9).** Le contrat exact du service généré est maintenant connu (lu directement dans `src/generated/services/TicketsService.ts` et `src/generated/models/TicketsModel.ts`) :
+> - Chemin réel : `src/generated/` (pas `generated/` à la racine). Depuis `src/data/sharePointTicketRepository.ts`, l'import est donc `../generated/...` (un seul niveau, pas deux).
+> - Méthodes réelles : `TicketsService.getAll(options?)`, `.get(id: string, options?)`, `.create(record: Omit<TicketsWrite,'ID'>)`, `.update(id: string, changes: Partial<Omit<TicketsWrite,'ID'>>)`, `.delete(id: string): Promise<void>`.
+> - `getAll`/`get`/`create`/`update` renvoient tous `Promise<IOperationResult<T>>` où `IOperationResult<T> = { success: boolean; data: T; error?: Error | { message: string; status?: number; ... } }`. **Pas de wrapper `.value`** : pour `getAll`, `data` est directement `TicketsRead[]`. `delete` renvoie `Promise<void>` nu (pas enveloppé).
+> - `TicketsRead`/`TicketsWrite` sont structurellement compatibles avec `SharePointTicketRecord`/`SharePointTicketPayload` (Task 10) : TypeScript accepte l'affectation directe sans cast.
+
 **Files:**
 - Modify: `src/data/sharePointTicketRepository.ts`
 - Modify: `.env.local` (non commité — copié depuis `.env.local.example`)
 
 **Interfaces:**
-- Consumes: `TicketRepository` (Task 4), `changerStatut` du domaine (Task 2, importé ici sous l'alias `appliquerTransition`), `fromSharePoint`/`toSharePoint` (Task 10), le service généré du Task 9 (nom exact du service et de ses méthodes à confirmer à l'ouverture du fichier généré, ex. `TicketsService.getAll/get/create/update/delete`).
+- Consumes: `TicketRepository` (Task 4), `changerStatut` du domaine (Task 2, importé ici sous l'alias `appliquerTransition`), `fromSharePoint`/`toSharePoint` (Task 10), `TicketsService` et `IOperationResult` du service généré du Task 9.
 - Produces: `SharePointTicketRepository` pleinement fonctionnel (remplace le stub du Task 7).
 
-Cette tâche dépend d'informations produites en Task 9 (chemin exact de `generated/`, nom exact du service et de ses méthodes) qui ne sont connues qu'après génération réelle. Adapter les noms d'import ci-dessous au résultat constaté.
+Point corrigé après revue (bloquant) : la première version de `changerStatut` envoyait directement le statut cible à SharePoint, sans passer par la fonction `changerStatut` du domaine. Résultat : contrairement à `InMemoryTicketRepository` (qui applique déjà la machine à états du domaine), n'importe quel appelant pouvait forcer `Nouveau → Résolu` en mode SharePoint — la règle 3 n'était garantie que par le filtrage du sélecteur UI (Task 6), pas par le repository lui-même. Le correctif : lire d'abord le ticket courant, appliquer la fonction pure `changerStatut` du domaine (qui lève si la transition est interdite), puis persister le seul statut validé.
 
-Point corrigé après revue (bloquant) : la première version de `changerStatut` envoyait directement le statut cible à SharePoint (`TicketsService.update(id, { Statut: { Value: statut } })`), sans passer par la fonction `changerStatut` du domaine. Résultat : contrairement à `InMemoryTicketRepository` (qui applique déjà la machine à états du domaine), n'importe quel appelant pouvait forcer `Nouveau → Résolu` en mode SharePoint — la règle 3 n'était garantie que par le filtrage du sélecteur UI (Task 6), pas par le repository lui-même. Le correctif : lire d'abord le ticket courant, appliquer la fonction pure `changerStatut` du domaine (qui lève si la transition est interdite), puis persister le seul statut validé.
-
-- [ ] **Step 1: Relire le fichier de modèle généré (Task 9-Step 7) et confirmer le contrat réel avant d'écrire l'adaptateur**
-
-Ouvrir le service et le modèle générés (chemin noté au Task 9-Step 6). Noter précisément, à partir du code réel (pas d'hypothèse) :
-- le nom exact des méthodes du service (`getAll`, `get`, `create`, `update`, `delete` ou équivalents) et leurs signatures,
-- si les réponses sont enveloppées (`{ data: ... }`) ou renvoyées directement,
-- si `getAll()`/`get(id)` renvoient un tableau directement ou un objet `{ value: [...] }`.
-
-Si l'un de ces points diffère de ce qui est supposé au Step 2 ci-dessous, adapter le code avant de l'écrire — ne pas router les divergences vers un `any` (règle 5 : zéro `any`) ni vers un « ajustement » vague : le contrat réel du service généré est la source de vérité, pas les hypothèses de ce plan.
-
-- [ ] **Step 2: Remplacer le stub par l'implémentation réelle, en passant les transitions de statut par le domaine**
+- [ ] **Step 1: Remplacer le stub par l'implémentation réelle**
 
 ```typescript
 // src/data/sharePointTicketRepository.ts
@@ -1685,9 +1712,16 @@ import type { TicketRepository } from "./ticketRepository";
 import type { Ticket, NouveauTicket, Statut } from "../domain/ticket";
 import { creerTicket, changerStatut as appliquerTransition } from "../domain/ticket";
 import { fromSharePoint, toSharePoint } from "./sharePointMapping";
-// ⚠️ Ajuster ce chemin d'import selon ce qui a été constaté au Task 9 (generated/ à la
-// racine ou src/generated/) et le nom exact du service généré pour la liste Tickets.
-import { TicketsService } from "../../generated/services/TicketsService";
+import type { IOperationResult } from "@microsoft/power-apps/data";
+import { TicketsService } from "../generated/services/TicketsService";
+
+/** Déballe un IOperationResult : renvoie `.data` si succès, sinon lève une erreur lisible. */
+function unwrap<T>(result: IOperationResult<T>): T {
+  if (!result.success) {
+    throw new Error(result.error?.message ?? "Appel SharePoint échoué.");
+  }
+  return result.data;
+}
 
 /**
  * Adaptateur SharePoint. Mappe les colonnes de la liste SP <-> le modèle métier
@@ -1695,28 +1729,27 @@ import { TicketsService } from "../../generated/services/TicketsService";
  */
 export class SharePointTicketRepository implements TicketRepository {
   async lister(): Promise<Ticket[]> {
-    const result = await TicketsService.getAll();
-    const rows = result.data ?? result;
-    return (rows.value ?? rows).map(fromSharePoint);
+    const rows = unwrap(await TicketsService.getAll());
+    return rows.map(fromSharePoint);
   }
 
   async creer(input: NouveauTicket): Promise<Ticket> {
     // id/creeLe sont gérés par SharePoint (ID auto-incrémenté, Created système) :
     // on ne les utilise pas dans le payload envoyé (toSharePoint ne les inclut pas).
     const brouillon = creerTicket(input, { id: () => "", maintenant: () => new Date() });
-    const cree = await TicketsService.create(toSharePoint(brouillon));
-    return fromSharePoint(cree.data ?? cree);
+    const cree = unwrap(await TicketsService.create(toSharePoint(brouillon)));
+    return fromSharePoint(cree);
   }
 
   async changerStatut(id: string, statut: Statut): Promise<Ticket> {
     // On lit le ticket courant, on applique la machine à états du domaine (qui lève
     // sur une transition interdite), puis on persiste uniquement le statut validé —
     // jamais le statut cible brut envoyé par l'appelant.
-    const actuel = await TicketsService.get(id);
-    const ticketActuel = fromSharePoint(actuel.data ?? actuel);
+    const actuel = unwrap(await TicketsService.get(id));
+    const ticketActuel = fromSharePoint(actuel);
     const valide = appliquerTransition(ticketActuel, statut);
-    const maj = await TicketsService.update(id, { Statut: { Value: valide.statut } });
-    return fromSharePoint(maj.data ?? maj);
+    const maj = unwrap(await TicketsService.update(id, { Statut: valide.statut }));
+    return fromSharePoint(maj);
   }
 
   async supprimer(id: string): Promise<void> {
@@ -1725,35 +1758,35 @@ export class SharePointTicketRepository implements TicketRepository {
 }
 ```
 
-- [ ] **Step 3: Vérifier le typecheck**
+- [ ] **Step 2: Vérifier le typecheck**
 
 Run: `npx tsc -b --noEmit`
-Expected: 0 erreur. Si le service généré expose une forme différente (ex. pas de `.data`, méthodes nommées autrement), corriger cette implémentation pour correspondre exactement à ce que `tsc` rapporte — ne jamais utiliser `any` pour faire taire une erreur (règle 5 : zéro `any`).
+Expected: 0 erreur. Si `tsc` rapporte une divergence (ex. un champ de `TicketsRead`/`TicketsWrite` different de ce qui précède), corriger cette implémentation pour correspondre exactement à ce que `tsc` rapporte — ne jamais utiliser `any` pour faire taire une erreur (règle 5 : zéro `any`).
 
-- [ ] **Step 4: Lancer la suite de tests (le SDK n'y est toujours pas appelé)**
+- [ ] **Step 3: Lancer la suite de tests (le SDK n'y est toujours pas appelé)**
 
-Run: `npm test`
+Run: `npm test` (ajouter `-- --no-file-parallelism` si `spawn UNKNOWN` apparaît, voir note du Task 9)
 Expected: PASS, inchangé — `SharePointTicketRepository` n'est pas testé unitairement (il appelle le SDK), seul son mapping pur (Task 10) et la machine à états qu'il réutilise (Task 2) le sont.
 
-- [ ] **Step 5: Activer le mode SharePoint localement**
+- [ ] **Step 4: Activer le mode SharePoint localement**
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-Éditer `.env.local` : mettre `VITE_USE_SHAREPOINT=true` et vérifier `VITE_SP_SITE_URL` (URL du site réel, non double-encodée ici — c'est un simple rappel humain, pas une valeur consommée par le code applicatif).
+Éditer `.env.local` : mettre `VITE_USE_SHAREPOINT=true` et `VITE_SP_SITE_URL=https://votretenant.sharepoint.com/sites/aMP` (site réel, confirmé au Task 9 — simple rappel humain dans ce fichier, pas une valeur consommée par le code applicatif).
 
-- [ ] **Step 6: Lancer l'hôte Power Apps local et vérifier manuellement**
+- [ ] **Step 5: Lancer l'hôte Power Apps local et vérifier manuellement**
 
 Run: `npm run power:run`
-Ouvrir l'URL « Local Play » indiquée (même profil navigateur que le tenant de démo — **jamais** `npm run dev` seul pour ce mode, contrairement à ce que suggérait une version antérieure du runbook de démo, corrigée).
+Ouvrir l'URL « Local Play » indiquée (même profil navigateur que le tenant de démo — **jamais** `npm run dev` seul pour ce mode).
 Vérifier : la liste se charge depuis la vraie liste SharePoint `Tickets`, la création d'un ticket apparaît bien dans SharePoint, le changement de statut persiste, la suppression fonctionne pour un ticket `Résolu`, et une tentative de transition interdite (si testée via un appel direct hors UI) échoue proprement au lieu d'être silencieusement acceptée.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add src/data/sharePointTicketRepository.ts
-git commit -m "feat(data): câblage SharePointTicketRepository sur le service généré"
+git commit -m "feat(data): câblage SharePointTicketRepository sur le service généré (contrat réel post-génération)"
 ```
 
 (`.env.local` reste non commité — il est dans `.gitignore`.)

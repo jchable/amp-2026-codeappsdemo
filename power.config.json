@@ -1,12 +1,31 @@
 {
-  "$schema": "https://raw.githubusercontent.com/microsoft/PowerAppsCodeApps/main/schemas/power.config.schema.json",
-  "appId": "<généré par pac code init>",
-  "environmentId": "<votre environnement>",
-  "dataSources": [
-    {
-      "name": "Tickets",
-      "type": "shared_sharepointonline",
-      "note": "Renseigné automatiquement par: pac code add-data-source"
+  "version": "1.0",
+  "appId": "11111111-1111-1111-1111-111111111111",
+  "appDisplayName": "aMP Tickets",
+  "region": "prod",
+  "environmentId": "Default-00000000-0000-0000-0000-000000000000",
+  "description": " ",
+  "buildPath": "./dist",
+  "buildEntryPoint": "index.html",
+  "localAppUrl": "http://localhost:3000",
+  "logoPath": "Default",
+  "connectionReferences": {
+    "22222222-2222-2222-2222-222222222222": {
+      "id": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+      "displayName": "SharePoint",
+      "dataSources": [
+        "tickets"
+      ],
+      "dataSets": {
+        "https://votretenant.sharepoint.com/sites/aMP": {
+          "dataSources": {
+            "tickets": {
+              "tableName": "33333333-3333-3333-3333-333333333333"
+            }
+          }
+        }
+      }
     }
-  ]
+  },
+  "databaseReferences": {}
 }

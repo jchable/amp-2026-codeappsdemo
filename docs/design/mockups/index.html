@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinq maquettes pour aMP Tickets</title>
+<style>
+:root{--encre:#16202A;--doux:#52606D;--ligne:#D5DCE3}
+*{box-sizing:border-box}
+body{margin:0;font:400 16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--encre);background:#fff}
+main{max-width:920px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:30px;line-height:1.15;margin:0 0 8px}
+p.intro{color:var(--doux);max-width:60ch;margin:0 0 32px}
+ol{list-style:none;margin:0;padding:0}
+li{border-top:1px solid var(--ligne);padding:20px 0;display:grid;grid-template-columns:150px 1fr;gap:6px 24px}
+li a.nom{font-weight:700;font-size:20px;color:var(--encre)}
+li p{margin:0}
+li .cle{color:var(--doux);font-size:14.5px;margin-top:6px}
+.pal{display:flex;gap:4px;margin-top:8px}
+.pal i{width:22px;height:22px;border-radius:5px;border:1px solid rgba(0,0,0,.12)}
+@media (max-width:640px){li{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Cinq directions pour l'interface d'aMP Tickets</h1>
+  <p class="intro">Chaque maquette est interactive : filtre, création avec validation, changement de statut selon les transitions autorisées, suppression. Elles partagent les mêmes huit demandes et les mêmes règles que la spec.</p>
+  <ol>
+    <li><div><a class="nom" href="1-tableau.html">1. Le tableau</a><div class="pal"><i style="background:#0E7C86"></i><i style="background:#D6DFE6"></i><i style="background:#B3261E"></i><i style="background:#17222D"></i></div></div>
+      <div><p>Trois voies, une par statut. Les boutons proposent uniquement les déplacements permis, avec des verbes : « Prendre en charge », « Marquer résolu ».</p><p class="cle">Priorité lue sur l'épaisseur du liseré. Bricolage Grotesque et Instrument Sans.</p></div></li>
+    <li><div><a class="nom" href="2-guichet.html">2. Le guichet</a><div class="pal"><i style="background:#0F4C55"></i><i style="background:#FF7A59"></i><i style="background:#FFCB47"></i><i style="background:#A8E0CC"></i></div></div>
+      <div><p>Des tickets à souche numérotés, comme un guichet. Un grand écran annonce la prochaine demande à prendre en charge.</p><p class="cle">Priorité lue sur la couleur du ticket, statut sur le tampon. Unbounded et Hanken Grotesk.</p></div></li>
+    <li><div><a class="nom" href="3-file.html">3. La file</a><div class="pal"><i style="background:#FFE14D"></i><i style="background:#0F141A"></i><i style="background:#2457D6"></i><i style="background:#DDE2E8"></i></div></div>
+      <div><p>Liste à gauche, détail à droite. La demande sélectionnée est surlignée comme au marqueur. Le parcours de statut explique pourquoi Nouveau vers Résolu est impossible.</p><p class="cle">Navigation au clavier, priorité en barres de signal. Schibsted Grotesk.</p></div></li>
+    <li><div><a class="nom" href="4-strates.html">4. Les strates</a><div class="pal"><i style="background:#14213D"></i><i style="background:#3E5C84"></i><i style="background:#DCE6F0"></i><i style="background:#FFB703"></i></div></div>
+      <div><p>Trois bandes horizontales, la plus foncée pour la priorité haute. À l'intérieur, les plus récentes d'abord : la règle de tri devient la mise en page.</p><p class="cle">Statut en piste de trois segments cliquables. Big Shoulders Display et Onest.</p></div></li>
+    <li><div><a class="nom" href="5-terrain.html">5. Le terrain</a><div class="pal"><i style="background:#2447F5"></i><i style="background:#FFB000"></i><i style="background:#0B7A43"></i><i style="background:#0B1220"></i></div></div>
+      <div><p>Pensée pour le téléphone, debout dans la salle. Les trois compteurs servent de filtres, un gros bouton fait avancer la demande, la suppression est rangée dans « Plus d'actions ».</p><p class="cle">Cibles de 44 à 56 px, création dans une feuille en bas d'écran. Archivo.</p></div></li>
+  </ol>
+</main>
+</body>
+</html>
