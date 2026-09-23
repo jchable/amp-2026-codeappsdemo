@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import * as DS from "./index";
+import type { DocComposant } from "./doc-types";
 import { couleursEnDur, proprietesDe, resoudre, variablesUtilisees, type Proprietes } from "./tokens/analyseCss";
 import { ratioContraste } from "./tokens/contraste";
 import {
@@ -153,6 +154,23 @@ describe("gouvernance — accessibilité tactile", () => {
       const css = fichiersCss[chemin] ?? "";
       return !/@media \(pointer: coarse\)[\s\S]*var\(--cto-cible-tactile\)/.test(css);
     });
+    expect(fautes).toEqual([]);
+  });
+});
+
+const fichesDoc = import.meta.glob<DocComposant>("./composants/*/*.doc.tsx", { import: "default", eager: true });
+
+describe("gouvernance — documentation", () => {
+  it("tout composant exporté par l'index possède sa fiche .doc.tsx, et inversement", () => {
+    const exportes = Object.keys(DS).sort();
+    const documentes = Object.values(fichesDoc).map((d) => d.nom).sort();
+    expect(documentes).toEqual(exportes);
+  });
+
+  it("chaque fiche est rangée dans le dossier de son composant, sous le nom <Nom>.doc.tsx", () => {
+    const fautes = Object.entries(fichesDoc)
+      .filter(([chemin, doc]) => !chemin.endsWith(`/${doc.nom}/${doc.nom}.doc.tsx`))
+      .map(([chemin]) => chemin);
     expect(fautes).toEqual([]);
   });
 });
