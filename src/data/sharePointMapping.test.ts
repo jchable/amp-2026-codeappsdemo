@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fromSharePoint, toSharePoint, type SharePointTicketRecord } from "./sharePointMapping";
+import { choixSharePoint, fromSharePoint, miseAJourStatut, toSharePoint, type SharePointTicketRecord } from "./sharePointMapping";
 
 describe("fromSharePoint", () => {
   it("mappe un enregistrement SharePoint complet vers un Ticket", () => {
@@ -58,7 +58,7 @@ describe("fromSharePoint — null OData et absence traités pareil", () => {
     Demandeur: "j",
     Created: "2026-09-23T08:00:00Z",
   };
-  const champs = ["ID", "Title", "Statut", "Priorite", "Created"] as const;
+  const champs = ["ID", "Title", "Created"] as const;
 
   it.each(champs)("lève une erreur explicite si %s vaut null", (champ) => {
     const record = { ...complet, [champ]: null } as unknown as SharePointTicketRecord;
@@ -73,8 +73,70 @@ describe("fromSharePoint — null OData et absence traités pareil", () => {
   });
 });
 
+// Règle 8 : une ligne ajoutée à la main dans SharePoint (ou créée avec des choix vides)
+// ne doit pas empêcher d'afficher les autres. Mêmes défauts qu'à la création (règle 2).
+describe("fromSharePoint — défauts à la lecture (règle 8)", () => {
+  const complet = {
+    ID: 1,
+    Title: "T",
+    Description: "",
+    Statut: { Value: "En cours" },
+    Priorite: { Value: "Haute" },
+    Demandeur: "j",
+    Created: "2026-09-23T08:00:00Z",
+  };
+
+  it.each([
+    ["absent", undefined],
+    ["null", null],
+    ["un objet dont Value est null", { Value: null }],
+    ["un objet dont Value est undefined", { Value: undefined }],
+    ["un objet dont Value est une chaîne vide", { Value: "" }],
+  ])("traite un Statut %s comme Nouveau",(_libelle, statut) => {
+    const record = { ...complet, Statut: statut } as unknown as SharePointTicketRecord;
+    expect(fromSharePoint(record).statut).toBe("Nouveau");
+  });
+
+  it.each([
+    ["absente", undefined],
+    ["null", null],
+    ["un objet dont Value est null", { Value: null }],
+    ["un objet dont Value est undefined", { Value: undefined }],
+    ["un objet dont Value est une chaîne vide", { Value: "" }],
+  ])("traite une Priorite %s comme Moyenne",(_libelle, priorite) => {
+    const record = { ...complet, Priorite: priorite } as unknown as SharePointTicketRecord;
+    expect(fromSharePoint(record).priorite).toBe("Moyenne");
+  });
+
+  it("traite une ligne sans Statut ni Priorite (créée avec des choix vides) comme Nouveau / Moyenne", () => {
+    const { Statut: _s, Priorite: _p, ...record } = complet;
+    expect(fromSharePoint(record as SharePointTicketRecord)).toMatchObject({
+      statut: "Nouveau",
+      priorite: "Moyenne",
+    });
+  });
+
+  it("conserve les valeurs présentes et valides", () => {
+    const ticket = fromSharePoint(complet);
+    expect(ticket.statut).toBe("En cours");
+    expect(ticket.priorite).toBe("Haute");
+  });
+});
+
+describe("choixSharePoint", () => {
+  it("enveloppe la valeur dans un objet { Value }", () => {
+    expect(choixSharePoint("En cours")).toEqual({ Value: "En cours" });
+  });
+});
+
+describe("miseAJourStatut", () => {
+  it("produit un payload partiel { Statut: { Value } } sans autre champ", () => {
+    expect(miseAJourStatut("Résolu")).toEqual({ Statut: { Value: "Résolu" } });
+  });
+});
+
 describe("toSharePoint", () => {
-  it("envoie Statut/Priorite en chaînes brutes (pas en objet { Value }) et omet l'id", () => {
+  it("envoie Statut/Priorite en objets { Value } (une chaîne brute serait ignorée par SharePoint) et omet l'id", () => {
     const ticket = {
       id: "42",
       titre: "VPN inaccessible",
@@ -87,8 +149,8 @@ describe("toSharePoint", () => {
     expect(toSharePoint(ticket)).toEqual({
       Title: "VPN inaccessible",
       Description: "Ne se connecte plus",
-      Statut: "En cours",
-      Priorite: "Haute",
+      Statut: { Value: "En cours" },
+      Priorite: { Value: "Haute" },
       Demandeur: "julien",
     });
   });
