@@ -73,3 +73,26 @@ export function changerStatut(ticket: Ticket, vers: Statut): Ticket {
 export function transitionsPossibles(statut: Statut): Statut[] {
   return [statut, ...TRANSITIONS[statut]];
 }
+
+const PRIORITE_ORDRE: Record<Priorite, number> = { Haute: 0, Moyenne: 1, Basse: 2 };
+
+export function filtrerParStatut(tickets: Ticket[], statut: Statut | "Tous"): Ticket[] {
+  return statut === "Tous" ? tickets : tickets.filter((t) => t.statut === statut);
+}
+
+/** Tri : priorité décroissante puis date de création (plus récent d'abord). */
+export function trierParPriorite(tickets: Ticket[]): Ticket[] {
+  return [...tickets].sort(
+    (a, b) =>
+      PRIORITE_ORDRE[a.priorite] - PRIORITE_ORDRE[b.priorite] ||
+      b.creeLe.localeCompare(a.creeLe)
+  );
+}
+
+export function compter(tickets: Ticket[]): Record<Statut, number> {
+  return {
+    Nouveau: filtrerParStatut(tickets, "Nouveau").length,
+    "En cours": filtrerParStatut(tickets, "En cours").length,
+    Résolu: filtrerParStatut(tickets, "Résolu").length,
+  };
+}

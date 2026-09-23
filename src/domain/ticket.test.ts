@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validerTicket, creerTicket, changerStatut, transitionAutorisee, transitionsPossibles, type NouveauTicket, type Ticket } from "./ticket";
+import { validerTicket, creerTicket, changerStatut, transitionAutorisee, transitionsPossibles, filtrerParStatut, trierParPriorite, compter, type NouveauTicket, type Ticket } from "./ticket";
 
 describe("validerTicket", () => {
   it("exige un titre", () => {
@@ -77,5 +77,25 @@ describe("changerStatut / transitionAutorisee / transitionsPossibles", () => {
   });
   it("transitionsPossibles depuis Résolu : lui-même + En cours (réouverture)", () => {
     expect(transitionsPossibles("Résolu")).toEqual(["Résolu", "En cours"]);
+  });
+});
+
+describe("filtrerParStatut / trierParPriorite / compter", () => {
+  const tickets = [
+    base({ id: "a", priorite: "Basse", statut: "Nouveau" }),
+    base({ id: "b", priorite: "Haute", statut: "En cours" }),
+    base({ id: "c", priorite: "Moyenne", statut: "Nouveau" }),
+  ];
+  it("filtre par statut", () => {
+    expect(filtrerParStatut(tickets, "Nouveau").map((t) => t.id)).toEqual(["a", "c"]);
+  });
+  it("Tous ne filtre rien", () => {
+    expect(filtrerParStatut(tickets, "Tous")).toHaveLength(3);
+  });
+  it("trie par priorité décroissante", () => {
+    expect(trierParPriorite(tickets).map((t) => t.id)).toEqual(["b", "c", "a"]);
+  });
+  it("compte par statut", () => {
+    expect(compter(tickets)).toEqual({ Nouveau: 2, "En cours": 1, "Résolu": 0 });
   });
 });
