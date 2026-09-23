@@ -12,7 +12,7 @@ describe("TicketForm", () => {
   });
 
   it("appelle onCreer avec titre, demandeur, priorité et description, puis réinitialise le formulaire", async () => {
-    const onCreer = vi.fn().mockResolvedValue(undefined);
+    const onCreer = vi.fn().mockResolvedValue(true);
     render(<TicketForm onCreer={onCreer} />);
 
     fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
@@ -32,5 +32,45 @@ describe("TicketForm", () => {
     });
     expect(screen.getByLabelText("Titre")).toHaveValue("");
     expect(screen.getByLabelText("Priorité")).toHaveValue("Moyenne");
+  });
+
+  it("conserve la saisie quand la création échoue (onCreer résout false)", async () => {
+    const onCreer = vi.fn().mockResolvedValue(false);
+    render(<TicketForm onCreer={onCreer} />);
+
+    fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
+    fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Créer" }));
+    });
+
+    expect(onCreer).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Titre")).toHaveValue("VPN inaccessible");
+    expect(screen.getByLabelText("Demandeur")).toHaveValue("julien");
+  });
+
+  it("désactive le bouton pendant la création puis le réactive", async () => {
+    let terminer: (ok: boolean) => void = () => {};
+    const onCreer = vi.fn(
+      () =>
+        new Promise<boolean>((resolve) => {
+          terminer = resolve;
+        })
+    );
+    render(<TicketForm onCreer={onCreer} />);
+
+    fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
+    fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Créer" }));
+    });
+    expect(screen.getByRole("button", { name: "Créer" })).toBeDisabled();
+
+    await act(async () => {
+      terminer(false);
+    });
+    expect(screen.getByRole("button", { name: "Créer" })).toBeEnabled();
   });
 });

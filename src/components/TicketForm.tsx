@@ -2,12 +2,13 @@ import { useState, type FormEvent } from "react";
 import type { NouveauTicket, Priorite } from "../domain/ticket";
 import { validerTicket, PRIORITES } from "../domain/ticket";
 
-export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise<void> }) {
+export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise<boolean> }) {
   const [titre, setTitre] = useState("");
   const [demandeur, setDemandeur] = useState("");
   const [description, setDescription] = useState("");
   const [priorite, setPriorite] = useState<Priorite>("Moyenne");
   const [erreurs, setErreurs] = useState<string[]>([]);
+  const [enCours, setEnCours] = useState(false);
 
   async function soumettre(e: FormEvent) {
     e.preventDefault();
@@ -15,11 +16,17 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
     const errs = validerTicket(input);
     setErreurs(errs);
     if (errs.length) return;
-    await onCreer(input);
-    setTitre("");
-    setDemandeur("");
-    setDescription("");
-    setPriorite("Moyenne");
+    setEnCours(true);
+    try {
+      if (await onCreer(input)) {
+        setTitre("");
+        setDemandeur("");
+        setDescription("");
+        setPriorite("Moyenne");
+      }
+    } finally {
+      setEnCours(false);
+    }
   }
 
   return (
@@ -58,7 +65,7 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
           ))}
         </ul>
       )}
-      <button type="submit" className="primaire">
+      <button type="submit" className="primaire" disabled={enCours}>
         Créer
       </button>
     </form>

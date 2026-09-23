@@ -11,10 +11,12 @@ describe("useTickets", () => {
     await waitFor(() => expect(result.current.chargement).toBe(false));
     expect(result.current.tickets).toHaveLength(0);
 
+    let succes: boolean | undefined;
     await act(async () => {
-      await result.current.creer({ titre: "Panne VPN", demandeur: "julien" });
+      succes = await result.current.creer({ titre: "Panne VPN", demandeur: "julien" });
     });
 
+    expect(succes).toBe(true);
     expect(result.current.tickets).toHaveLength(1);
     expect(result.current.erreur).toBeNull();
   });
@@ -76,10 +78,12 @@ describe("useTickets", () => {
     const { result } = renderHook(() => useTickets(repoMutationEnPanne));
     await waitFor(() => expect(result.current.chargement).toBe(false));
 
+    let succes: boolean | undefined;
     await act(async () => {
-      await result.current.creer({ titre: "X", demandeur: "j" });
+      succes = await result.current.creer({ titre: "X", demandeur: "j" });
     });
 
+    expect(succes).toBe(false);
     expect(result.current.erreur).toBe("création refusée");
   });
 });

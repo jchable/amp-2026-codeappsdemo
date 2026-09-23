@@ -28,12 +28,14 @@ export function useTickets(repo: TicketRepository) {
   // sans ce try/catch, un échec de mutation resterait une promesse rejetée invisible
   // pour l'utilisateur (bug trouvé en revue avant implémentation).
   const creer = useCallback(
-    async (input: NouveauTicket) => {
+    async (input: NouveauTicket): Promise<boolean> => {
       try {
         await repo.creer(input);
         await recharger();
+        return true;
       } catch (e) {
         setErreur(e instanceof Error ? e.message : String(e));
+        return false;
       }
     },
     [repo, recharger]
