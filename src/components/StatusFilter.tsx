@@ -4,21 +4,19 @@ import { STATUTS } from "../domain/ticket";
 export function StatusFilter({
   valeur,
   onChange,
+  compteurs,
 }: {
   valeur: Statut | "Tous";
   onChange: (s: Statut | "Tous") => void;
+  compteurs: Record<Statut | "Tous", number>;
 }) {
   const options: (Statut | "Tous")[] = ["Tous", ...STATUTS];
   return (
-    <div className="filtre" role="tablist" aria-label="Filtrer par statut">
+    <div className="filtres" role="group" aria-label="Filtrer par statut">
       {options.map((o) => (
-        <button
-          key={o}
-          className={"pill" + (o === valeur ? " actif" : "")}
-          onClick={() => onChange(o)}
-          aria-pressed={o === valeur}
-        >
+        <button key={o} type="button" onClick={() => onChange(o)} aria-pressed={o === valeur}>
           {o}
+          <b>{compteurs[o]}</b>
         </button>
       ))}
     </div>

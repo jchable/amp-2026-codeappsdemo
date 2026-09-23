@@ -1,8 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, within } from "@testing-library/react";
 import { TicketForm } from "./TicketForm";
 
 describe("TicketForm", () => {
+  it("propose exactement trois priorités en radios, Moyenne cochée par défaut", () => {
+    render(<TicketForm onCreer={vi.fn()} />);
+    const groupe = screen.getByRole("radiogroup", { name: "Priorité" });
+    expect(within(groupe).getAllByRole("radio")).toHaveLength(3);
+    expect(within(groupe).getByLabelText("Basse")).not.toBeChecked();
+    expect(within(groupe).getByLabelText("Moyenne")).toBeChecked();
+    expect(within(groupe).getByLabelText("Haute")).not.toBeChecked();
+  });
+
   it("affiche les erreurs et n'appelle pas onCreer si le titre est vide", () => {
     const onCreer = vi.fn();
     render(<TicketForm onCreer={onCreer} />);
@@ -18,7 +27,7 @@ describe("TicketForm", () => {
     fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
     fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Depuis ce matin" } });
-    fireEvent.change(screen.getByLabelText("Priorité"), { target: { value: "Haute" } });
+    fireEvent.click(screen.getByLabelText("Haute"));
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Créer" }));
@@ -31,7 +40,7 @@ describe("TicketForm", () => {
       priorite: "Haute",
     });
     expect(screen.getByLabelText("Titre")).toHaveValue("");
-    expect(screen.getByLabelText("Priorité")).toHaveValue("Moyenne");
+    expect(screen.getByLabelText("Moyenne")).toBeChecked();
   });
 
   it("conserve la saisie quand la création échoue (onCreer résout false)", async () => {

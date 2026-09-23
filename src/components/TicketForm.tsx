@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import type { NouveauTicket, Priorite } from "../domain/ticket";
 import { validerTicket, PRIORITES } from "../domain/ticket";
 
+const CLASSE_PRIORITE: Record<Priorite, string> = { Basse: "b", Moyenne: "m", Haute: "h" };
+
 export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise<boolean> }) {
   const [titre, setTitre] = useState("");
   const [demandeur, setDemandeur] = useState("");
@@ -30,8 +32,8 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
   }
 
   return (
-    <form className="carte form" onSubmit={soumettre}>
-      <h2>Nouveau ticket</h2>
+    <form className="bloc" onSubmit={soumettre}>
+      <h2>Nouvelle demande</h2>
       <label>
         Titre
         <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ex. VPN inaccessible" />
@@ -48,24 +50,26 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
           placeholder="Détails utiles pour traiter la demande (optionnel)"
         />
       </label>
-      <label>
-        Priorité
-        <select value={priorite} onChange={(e) => setPriorite(e.target.value as Priorite)}>
-          {PRIORITES.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-      </label>
-      {erreurs.length > 0 && (
-        <ul className="erreurs">
-          {erreurs.map((x) => (
-            <li key={x}>{x}</li>
-          ))}
-        </ul>
-      )}
-      <button type="submit" className="primaire" disabled={enCours}>
+      <div className="prios" role="radiogroup" aria-label="Priorité">
+        {PRIORITES.map((p) => (
+          <label key={p} className={CLASSE_PRIORITE[p]}>
+            <input
+              type="radio"
+              name="priorite"
+              value={p}
+              checked={priorite === p}
+              onChange={() => setPriorite(p)}
+            />
+            <span>{p}</span>
+          </label>
+        ))}
+      </div>
+      {erreurs.map((x) => (
+        <p key={x} className="err">
+          {x}
+        </p>
+      ))}
+      <button type="submit" className="valider" disabled={enCours}>
         Créer
       </button>
     </form>
