@@ -381,6 +381,24 @@ h1 {
     display: inline-flex;
     align-items: center;
   }
+  .filtres button,
+  .souche .actions button,
+  .bloc .valider,
+  .prochain .bouton {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .prios span {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .souche .actions {
+    gap: 8px 12px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
