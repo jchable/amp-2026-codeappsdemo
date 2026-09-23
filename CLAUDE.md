@@ -84,6 +84,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 - Transitions autorisées : `Nouveau → En cours`, `En cours → Résolu`, `En cours → Nouveau`,
   `Résolu → En cours`. **`Nouveau → Résolu` interdit.**
 - Tri : `Haute` > `Moyenne` > `Basse`, puis plus récent d'abord. Filtre par statut, `Tous` inclus.
+- Suppression : autorisée quel que soit le statut du ticket.
 
 ## Environnement et bascule de données
 

@@ -24,10 +24,11 @@ Les organisateurs de l'aMP reçoivent des demandes (matériel, accès, incidents
 3. Transitions autorisées : `Nouveau → En cours`, `En cours → Résolu`, `En cours → Nouveau`, réouverture `Résolu → En cours`. Le saut `Nouveau → Résolu` est interdit.
 4. Liste triée par priorité décroissante puis date récente.
 5. Filtre par statut (`Tous` inclus).
+6. Un ticket peut être supprimé quel que soit son statut (`Nouveau`, `En cours`, `Résolu`).
 
 ## Critères d'acceptation (DONE)
 - [ ] CRUD complet sur la liste SharePoint.
-- [ ] Règles 1–5 couvertes par des tests Vitest verts.
+- [ ] Règles 1–6 couvertes par des tests Vitest verts.
 - [ ] UI lisible et responsive (liste + formulaire + filtres).
 - [ ] Déployée via `pac code push`, connectée à la liste réelle.
 
