@@ -52,11 +52,11 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 | `src/domain/ticket.ts` | Types `Ticket`, `Statut`, `Priorite`, `NouveauTicket`. Fonctions pures : `validerTicket`, `creerTicket`, `changerStatut`, `transitionAutorisee`, `filtrerParStatut`, `trierParPriorite`, `compter`. Les dépendances impures (`id`, `maintenant`) sont **injectées**. |
 | `src/data/ticketRepository.ts` | Interface `TicketRepository` : `lister`, `creer`, `changerStatut`, `supprimer`. Seule porte vers les données. |
 | `src/data/inMemoryTicketRepository.ts` | Impl mémoire (ids `mem-N`). Utilisée par défaut et dans les tests. |
-| `src/data/sharePointTicketRepository.ts` | Adaptateur SharePoint : mappe colonnes SP ↔ modèle métier, délègue au service généré. Lève une erreur explicite tant que `generated/` n'existe pas. |
+| `src/data/sharePointTicketRepository.ts` | Adaptateur SharePoint : mappe colonnes SP ↔ modèle métier, délègue au service généré (`../generated/services/TicketsService`). Implémenté. |
 | `src/hooks/useTickets.ts` | État, erreurs, rechargement après chaque mutation. Trie via le domaine. |
 | `src/App.tsx` | Choisit le repo selon `VITE_USE_SHAREPOINT`. Données de démo en mémoire. |
 | `src/PowerProvider.tsx` | Attend `getContext()` avant d'afficher l'app. Bannière si Power Platform indisponible. |
-| `generated/` | Sortie de `pac code add-data-source` (modèles + services). **Jamais édité à la main.** |
+| `src/generated/` + `.power/schemas/` | Sortie de `pac code add-data-source` (modèles + services), commitée. **Jamais éditée à la main.** |
 
 ## Règles (non négociables)
 
@@ -92,30 +92,36 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 - `VITE_USE_SHAREPOINT` absent ou `false` → mémoire (défaut, plan B de démo).
   `true` → `SharePointTicketRepository`.
 - `.env.local` : copier `.env.local.example`. Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
-- `power.config.json` : `appId` et `environmentId` renseignés par `pac code init`,
-  `dataSources` par `pac code add-data-source`. Le code applicatif ne le lit pas.
+- `power.config.json` : produit par `pac code init` (`appId`, `environmentId`) puis complété par
+  `pac code add-data-source` (`connectionReferences`). `pac code init` refuse de s'exécuter si le
+  fichier existe déjà. Le code applicatif ne le lit pas.
 
 ## Brancher SharePoint (étape 6 du plan)
 
 ```bash
 pac auth create                    # environnement de démo
 pac connection list                # connectionId SharePoint (la connexion doit préexister dans make.powerapps.com)
+pac code list-datasets ...         # copier la valeur du dataset telle quelle pour -d
+pac code list-tables ...           # copier l'id de la table (un GUID) tel quel pour -t
 pac code add-data-source -a "shared_sharepointonline" -c "<connectionId>" \
-  -t "Tickets" -d "<URL du site, DOUBLE URL-encodée>"
+  -t "<id de table, sortie de list-tables>" -d "<dataset, sortie de list-datasets>"
 ```
 
-Puis dans `sharePointTicketRepository.ts` : décommenter les imports `generated/`, écrire
-`fromSharePoint` / `toSharePoint`, puis `VITE_USE_SHAREPOINT=true` et `npm run power:run`.
+Puis dans `sharePointTicketRepository.ts` : les imports `../generated/...` et le mapping
+(`fromSharePoint` / `toSharePoint`, dans `sharePointMapping.ts`) sont en place ; il reste à
+mettre `VITE_USE_SHAREPOINT=true` et à lancer `npm run power:run`.
 
+- Code généré : `src/generated/` et `.power/schemas/`, les deux commités, jamais édités à la main.
+  Les imports depuis `src/data/` sont de la forme `../generated/...`.
 - Service généré : `getAll()`, `get(id)`, `create(record)`, `update(id, partial)`, `delete(id)`.
-  Les réponses sont enveloppées : lire `result.data` (et parfois `.value`).
-- Colonnes Choix (`Statut`, `Priorite`) : envoyer l'objet développé attendu par le connecteur
-  (ex. `{ Value: "Nouveau" }`), pas une simple chaîne. Vérifier la forme dans le modèle généré.
+  Les résultats sont des `IOperationResult<T> = { success, data, error? }` : `data` est le
+  tableau ou l'enregistrement directement (pas d'enveloppe `.value`). `delete` renvoie `void` :
+  son échec n'est pas observable.
+- Colonnes Choix (`Statut`, `Priorite`), asymétriques : en **lecture** ce sont des objets
+  `{ "@odata.type", Value, Id }` ; en **écriture** ce sont de simples chaînes
+  (`Statut?: string`). Ne pas envoyer `{ Value: ... }`.
 - Ignorer les propriétés suffixées `#Id` du modèle généré dans les payloads `create` / `update`.
 - `delete(id)` attend l'ID numérique SharePoint sous forme de chaîne.
-- Chemin de génération : la doc officielle actuelle génère dans `src/generated/`, les
-  commentaires de l'adaptateur supposent `generated/` à la racine. Vérifier le chemin réellement
-  produit et ajuster **les imports**, pas les fichiers générés.
 
 ## Pièges connus
 
@@ -124,7 +130,7 @@ Puis dans `sharePointTicketRepository.ts` : décommenter les imports `generated/
 - **Mode SharePoint ≠ `npm run dev`.** Les appels données ne passent que par l'hôte Power Apps
   (`npm run power:run`, URL « Local Play », même profil navigateur que le tenant).
   `npm run dev` seul suffit uniquement en mode mémoire.
-- **Dataset double URL-encodé** dans `-d`. `-t` = nom de la liste tel qu'affiché.
+- **Valeurs de `-d` et `-t`** : les copier depuis `pac code list-datasets` / `list-tables`, ne pas les composer à la main.
 - **`pac code` est en preview et en voie de dépréciation** au profit de
   `pa app init | add data-source | run | push`. Les commandes `pac` fonctionnent encore.
   Ne pas mélanger les deux sans mettre à jour les scripts npm.
@@ -141,7 +147,7 @@ Puis dans `sharePointTicketRepository.ts` : décommenter les imports `generated/
 Une Power App :
 - **fonctionnelle** : CRUD bout-en-bout sur la liste SharePoint réelle ;
 - **belle** : liste + formulaire + filtres, lisible et responsive ;
-- **conforme** à `docs/spec.md`, règles 1–5 couvertes par des tests ;
+- **conforme** à `docs/spec.md`, règles 1–6 couvertes par des tests ;
 - **testée** : `npm test` vert ;
 - **sans code smells** : `npm run build` passe sans erreur ni warning TypeScript ;
 - **déployée** via `npm run push`.
