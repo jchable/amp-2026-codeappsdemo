@@ -13,7 +13,6 @@ données dans une liste **SharePoint** `Tickets`.
   On corrige la spec, puis le code. Jamais l'inverse.
 - Plan de tâches : `docs/plan.md`. Étapes 1–5 faites (socle testé). 6–8 restantes :
   branchement SharePoint, recette, push.
-- Déroulé de démo et plan B : `docs/demo-runbook.md`. Site SharePoint de démo : `docs/DATA.md`.
 
 ## Commandes
 
