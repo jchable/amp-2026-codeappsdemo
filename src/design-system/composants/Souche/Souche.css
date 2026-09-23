@@ -1,0 +1,64 @@
+.cto-souche {
+  /* L'encoche du masque dépend de la hauteur de la tête : ces deux variables vivent ensemble. */
+  --cto-souche-tete-hauteur: 96px;
+  --cto-souche-encoche: 10px;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: var(--cto-rayon-lg);
+  background: var(--cto-souche-fond);
+  color: var(--cto-encre-souche);
+  box-shadow: inset 0 0 0 1px var(--cto-souche-contour);
+  -webkit-mask:
+    radial-gradient(circle var(--cto-souche-encoche) at 0 var(--cto-souche-tete-hauteur), transparent 98%, black) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--cto-souche-encoche) at 100% var(--cto-souche-tete-hauteur), transparent 98%, black) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle var(--cto-souche-encoche) at 0 var(--cto-souche-tete-hauteur), transparent 98%, black) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--cto-souche-encoche) at 100% var(--cto-souche-tete-hauteur), transparent 98%, black) right / 51% 100% no-repeat;
+}
+
+.cto-souche :focus-visible {
+  outline-color: var(--cto-anneau-focus-surface);
+}
+
+/* Les boutons primaires d'une souche sont à l'encre (surcharge des tokens de composant de Bouton). */
+.cto-souche .cto-bouton {
+  --cto-bouton-primaire-fond: var(--cto-encre-souche);
+  --cto-bouton-primaire-texte: var(--cto-action-primaire-texte);
+}
+
+.cto-souche--haute {
+  --cto-souche-fond: var(--cto-priorite-haute-fond);
+}
+.cto-souche--moyenne {
+  --cto-souche-fond: var(--cto-priorite-moyenne-fond);
+}
+.cto-souche--basse {
+  --cto-souche-fond: var(--cto-priorite-basse-fond);
+}
+.cto-souche--neutre {
+  --cto-souche-fond: var(--cto-priorite-neutre-fond);
+  opacity: 0.92;
+}
+
+.cto-souche__tete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: var(--cto-souche-tete-hauteur);
+  padding: var(--cto-space-4) var(--cto-space-4) 0;
+}
+
+.cto-souche__numero {
+  font: var(--cto-poids-extra) var(--cto-taille-2xl) / 1 var(--cto-police-titre);
+}
+
+.cto-souche__corps {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--cto-space-4);
+  border-top: 2px dashed var(--cto-separateur-souche);
+}
