@@ -29,10 +29,10 @@ Les organisateurs de l'aMP reçoivent des demandes (matériel, accès, incidents
 8. Un ticket lu dans la liste SharePoint sans statut est traité comme `Nouveau`, et sans priorité comme `Moyenne` (mêmes valeurs par défaut qu'à la création, règle 2) : une ligne ajoutée à la main dans SharePoint ne doit pas empêcher d'afficher les autres. Une valeur présente mais inconnue reste une erreur explicite.
 
 ## Critères d'acceptation (DONE)
-- [ ] CRUD complet sur la liste SharePoint.
-- [ ] Règles 1–8 couvertes par des tests Vitest verts.
-- [ ] UI lisible et responsive (liste + formulaire + filtres).
-- [ ] Déployée via `pac code push`, connectée à la liste réelle.
+- [x] CRUD complet sur la liste SharePoint.
+- [x] Règles 1–8 couvertes par des tests Vitest verts.
+- [x] UI lisible et responsive (liste + formulaire + filtres).
+- [x] Déployée via `pac code push`, connectée à la liste réelle.
 
 ## Hors périmètre (YAGNI)
 Pièces jointes, notifications, droits fins, multi-listes. À voir plus tard si besoin réel.

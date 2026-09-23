@@ -11,7 +11,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - [ ] **Liste SharePoint `Tickets`** créée (colonnes : `Title`, `Description`, `Statut` [choix], `Priorite` [choix], `Demandeur`).
 - [ ] **Connexion SharePoint** créée dans make.powerapps.com ; récupérer son id : `pac connection list`.
 - [ ] **Auth CLI** : `pac auth create --environment <url>` ; vérifier `pac auth list`.
-- [ ] **URL de site double-URL-encodée** prête (ex. `https%3A%2F%2Ftenant.sharepoint.com%2Fsites%2FaMP`).
+- [ ] **Dataset et table SharePoint** : `pac code list-datasets` puis `pac code list-tables`, valeurs à copier telles quelles (jamais encodées à la main).
 - [ ] **Repo** : `npm install` OK, `npm test` **vert** (voir `docs/superpowers/plans/` pour le compte à jour).
 - [ ] **Checkpoints git** créés (section 3) pour pouvoir sauter à n'importe quelle étape.
 - [ ] **Enregistrement de secours** de chaque jalon (asciinema/vidéo) sur le bureau.
@@ -54,14 +54,16 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 ### A5 · Brancher SharePoint (2–3 min)
 - **Action** :
   ```bash
+  pac code list-datasets -a "shared_sharepointonline" -c "<connectionId>"
+  pac code list-tables -a "shared_sharepointonline" -c "<connectionId>" -d "<dataset copié>"
   pac code add-data-source -a "shared_sharepointonline" -c "<connectionId>" \
-    -t "Tickets" -d "<URL_site_double_URL_encodée>"
+    -t "<id de table copié>" -d "<dataset copié>"
   ```
-- **Montre** : les fichiers générés dans `generated/` ; décommenter le mapping dans `src/data/sharePointTicketRepository.ts`.
+- **Montre** : les fichiers générés dans `src/generated/` ; l'adaptateur `sharePointTicketRepository.ts` et le mapping `sharePointMapping.ts` sont déjà en place.
 - **Dis** : « L'adaptateur SharePoint remplace l'impl mémoire — le reste de l'app ne bouge pas. »
 
 ### A6 · Lancer connecté (2 min) — *jalon app*
-- **Action** : `VITE_USE_SHAREPOINT=true` puis `npm run power:run` (hôte Power Apps local — **jamais** `npm run dev` seul en mode SharePoint, les appels données ne passent que par cet hôte) → URL « Local Play », même profil navigateur que le tenant.
+- **Action** : `npm run dev:sharepoint` puis `npm run power:run` (hôte Power Apps local — **jamais** `npm run dev` seul en mode SharePoint, les appels données ne passent que par cet hôte) → URL « Local Play », même profil navigateur que le tenant.
 - **Montre** : créer un ticket → il apparaît dans la liste **et** dans SharePoint.
 
 ### A7 · Déployer (1–2 min) — *jalon déploiement*
@@ -75,9 +77,9 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 
 | # | Ça casse à… | Symptôme | Bascule (fais ça) | Dis |
 |---|---|---|---|---|
-| B1 | **A1–A2** réseau/agent lent | l'agent rame ou coupe | `git checkout checkpoint-2-plan` : la spec et le plan sont déjà là | « Je vous montre le résultat, on a préparé le terrain » |
+| B1 | **A1–A2** réseau/agent lent | l'agent rame ou coupe | `git switch --detach step-1-brainstorming` : la spec et le plan sont déjà là | « Je vous montre le résultat, on a préparé le terrain » |
 | B2 | **A1–A4** l'agent part en vrille | skill ne se déclenche pas / ignore le plan | sauter au checkpoint suivant ; mentionner le skill `diagnosing-superpowers` | « Ça arrive — Superpowers sait diagnostiquer sa propre session » |
-| B3 | **A3** rouge inattendu / build cassé | test ne passe pas comme prévu | `git checkout checkpoint-4-green` (état vert connu) ou jouer la **vidéo RED→GREEN** | « On repart d'un état vert connu » |
+| B3 | **A3** rouge inattendu / build cassé | test ne passe pas comme prévu | `git switch --detach step-2-development` (état vert connu) ou jouer la **vidéo RED→GREEN** | « On repart d'un état vert connu » |
 | B4 | **A5–A6** SharePoint | connexion, double-encode, port 3000, auth | `VITE_USE_SHAREPOINT=false` → **impl mémoire** : l'app tourne **sans** SharePoint ; montrer le CRUD en mémoire | « L'archi isole les données : l'app marche même sans la plateforme » |
 | B5 | **A7** `pac code push` échoue | erreur de publication | rester sur `npm run dev` (local) + **capture app déployée** de secours | « Le push, je vous le montre en capture — l'app tourne en local » |
 | B6 | **partout** temps qui manque | il reste 3 min | sauter A5–A7 : montrer l'app en **mémoire** (déjà belle) + décrire le push à l'oral | « Le reste, c'est le branchement plateforme — 2 commandes » |
@@ -86,20 +88,24 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 
 ---
 
-## 3. Checkpoints git (à créer la veille)
+## 3. Étapes git (tags step-*)
+
+Les étapes du projet sont des tags annotés, empilés sur une seule branche (`main`) :
 
 ```bash
-git init && git add -A && git commit -m "checkpoint-0-constitution"
-# à chaque étape franchie, un commit taggé :
-git tag checkpoint-1-spec
-git tag checkpoint-2-plan
-git tag checkpoint-3-red
-git tag checkpoint-4-green
-git tag checkpoint-5-review
-git tag checkpoint-6-sharepoint
-git tag checkpoint-7-deploy
+git tag -n --sort=version:refname          # lister les étapes
+git switch --detach step-0-init           # aller à une étape (lecture seule)
+git switch main                            # revenir
+git switch -c essai step-1-brainstorming   # repartir d'une étape
 ```
-Sauter à une étape : `git checkout checkpoint-4-green`.
+
+| Tag | Contenu |
+|---|---|
+| `step-base` | application d'origine, avant la reconstruction |
+| `step-0-init` | code remis à zéro |
+| `step-1-brainstorming` | spec (règles 1 à 6) et plan TDD |
+| `step-2-development` | app complète, SharePoint réel, interface Le guichet, déployée |
+| `step-3-branding` | départ de la charte graphique |
 
 ---
 
@@ -126,7 +132,7 @@ npm run test:watch          # démo RED→GREEN
 npm run dev                 # http://localhost:3000
 pac auth list               # vérifier l'env
 pac connection list         # récupérer le connectionId SharePoint
-pac code add-data-source -a "shared_sharepointonline" -c "<id>" -t "Tickets" -d "<url_double_encodée>"
+pac code list-datasets / list-tables / add-data-source   # voir A5 (valeurs copiées, jamais encodées)
 pac code push               # déploiement
 ```
 
