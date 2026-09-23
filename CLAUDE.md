@@ -9,16 +9,17 @@ Démo « Après le vibe coding : garder le volant ». Une Power App **Code App**
 de demandes (tickets) pour les organisateurs de l'aMP, construite en **spec-driven + TDD**,
 données dans une liste **SharePoint** `Tickets`.
 
-- **La spec fait foi** : `docs/spec.md` (modèle de données, règles métier 1–5, critères DONE).
+- **La spec fait foi** : `docs/spec.md` (modèle de données, règles métier 1–6, critères DONE).
   On corrige la spec, puis le code. Jamais l'inverse.
-- Plan de tâches : `docs/plan.md`. Étapes 1–5 faites (socle testé). 6–8 restantes :
-  branchement SharePoint, recette, push.
+- Plan de tâches : `docs/superpowers/plans/` (sortie du skill `writing-plans`, une TDD strict).
+  Le code a été intégralement remis à zéro pour repartir en spec-driven + TDD depuis le domaine
+  jusqu'au branchement SharePoint et au déploiement.
 
 ## Commandes
 
 ```bash
 npm install
-npm test               # Vitest, une passe — 15 tests verts attendus
+npm test               # Vitest, une passe — voir docs/superpowers/plans/ pour le compte à jour
 npm run test:watch     # boucle TDD : RED → GREEN → refactor
 npm run build          # tsc -b (typecheck strict) + vite build — doit passer sans erreur
 npm run dev            # http://localhost:3000 — mode MÉMOIRE, sans Power Platform

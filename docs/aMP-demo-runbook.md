@@ -12,7 +12,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - [ ] **Connexion SharePoint** créée dans make.powerapps.com ; récupérer son id : `pac connection list`.
 - [ ] **Auth CLI** : `pac auth create --environment <url>` ; vérifier `pac auth list`.
 - [ ] **URL de site double-URL-encodée** prête (ex. `https%3A%2F%2Ftenant.sharepoint.com%2Fsites%2FaMP`).
-- [ ] **Repo** : `npm install` OK, `npm test` **vert** (15 tests).
+- [ ] **Repo** : `npm install` OK, `npm test` **vert** (voir `docs/superpowers/plans/` pour le compte à jour).
 - [ ] **Checkpoints git** créés (section 3) pour pouvoir sauter à n'importe quelle étape.
 - [ ] **Enregistrement de secours** de chaque jalon (asciinema/vidéo) sur le bureau.
 - [ ] **Connexion internet de secours** (partage 4G) + captures déjà prêtes.
@@ -35,7 +35,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - **Dis** : « Il ne code pas, il interroge. Ça, c'est la spec — et c'est là qu'on corrige, pas dans le code. »
 
 ### A2 · Plan (1–2 min)
-- **Action** : skill `writing-plans` → `docs/plan.md`.
+- **Action** : skill `writing-plans` → `docs/superpowers/plans/<date>-<sujet>.md`.
 - **Montre** : la découpe en tâches de 2–5 min.
 - **Dis** : « Chaque tâche a un chemin de fichier et une vérif. C'est le contrat qu'on va exécuter. »
 
@@ -61,7 +61,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - **Dis** : « L'adaptateur SharePoint remplace l'impl mémoire — le reste de l'app ne bouge pas. »
 
 ### A6 · Lancer connecté (2 min) — *jalon app*
-- **Action** : `VITE_USE_SHAREPOINT=true` puis `npm run dev` → http://localhost:3000 (**port imposé**).
+- **Action** : `VITE_USE_SHAREPOINT=true` puis `npm run power:run` (hôte Power Apps local — **jamais** `npm run dev` seul en mode SharePoint, les appels données ne passent que par cet hôte) → URL « Local Play », même profil navigateur que le tenant.
 - **Montre** : créer un ticket → il apparaît dans la liste **et** dans SharePoint.
 
 ### A7 · Déployer (1–2 min) — *jalon déploiement*
@@ -121,7 +121,7 @@ Sauter à une étape : `git checkout checkpoint-4-green`.
 
 ```bash
 npm install                 # 1re fois
-npm test                    # 15 tests (socle métier)
+npm test                    # socle métier (voir docs/superpowers/plans/ pour le compte)
 npm run test:watch          # démo RED→GREEN
 npm run dev                 # http://localhost:3000
 pac auth list               # vérifier l'env
@@ -132,7 +132,7 @@ pac code push               # déploiement
 
 ## 6. Pièges connus (rappel)
 - **Port 3000 obligatoire** (imposé par le SDK).
-- Dataset SharePoint en **double URL-encode** (le simple ne marche pas).
+- Dataset SharePoint en **double URL-encode** avec `pac code add-data-source` (le simple ne marche pas) — comportement non documenté officiellement, propre à `pac code` (pas à `pa app`, qui prend l'URL en clair). Plus sûr : `pac code list-datasets`/`list-tables` pour copier la valeur exacte au lieu de l'encoder à la main.
 - La **connexion doit préexister** dans make.powerapps.com (la CLI ne la crée pas).
 - **`generated/` ne s'édite jamais** (régénéré par `pac code`).
 - **SDK initialisé** (PowerProvider) **avant** tout appel données.

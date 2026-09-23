@@ -42,7 +42,7 @@
 - Test: `src/domain/ticket.test.ts`
 
 **Interfaces:**
-- Produces: `type Statut = "Nouveau" | "En cours" | "Résolu"`, `type Priorite = "Basse" | "Moyenne" | "Haute"`, `interface Ticket { id: string; titre: string; description: string; statut: Statut; priorite: Priorite; demandeur: string; creeLe: string }`, `interface NouveauTicket { titre: string; description?: string; priorite?: Priorite; demandeur: string }`, `validerTicket(input: NouveauTicket): string[]`, `creerTicket(input: NouveauTicket, deps: { id: () => string; maintenant: () => Date }): Ticket`.
+- Produces: `type Statut = "Nouveau" | "En cours" | "Résolu"`, `type Priorite = "Basse" | "Moyenne" | "Haute"`, `interface Ticket { id: string; titre: string; description: string; statut: Statut; priorite: Priorite; demandeur: string; creeLe: string }`, `interface NouveauTicket { titre: string; description?: string; priorite?: Priorite; demandeur: string }`, `PRIORITES: Priorite[]` (réutilisé par `TicketForm` en Task 6 et par le mapping SharePoint en Task 10, au lieu d'être redéfini localement), `validerTicket(input: NouveauTicket): string[]`, `creerTicket(input: NouveauTicket, deps: { id: () => string; maintenant: () => Date }): Ticket`.
 
 - [ ] **Step 1: Créer le setup de test (requis par `vitest.config.ts` déjà présent, sinon aucun test ne peut s'exécuter)**
 
@@ -118,6 +118,7 @@ export interface NouveauTicket {
 }
 
 export const STATUTS: Statut[] = ["Nouveau", "En cours", "Résolu"];
+export const PRIORITES: Priorite[] = ["Basse", "Moyenne", "Haute"];
 
 /** Valide un nouveau ticket. Renvoie la liste des erreurs (vide = valide). */
 export function validerTicket(input: NouveauTicket): string[] {
@@ -466,8 +467,28 @@ describe("InMemoryTicketRepository", () => {
     await expect(repo.supprimer("inconnu")).resolves.toBeUndefined();
     expect(await repo.lister()).toHaveLength(1);
   });
+
+  it("évite les collisions d'id quand le seed contient déjà des ids mem-N", async () => {
+    const seed: Ticket[] = [
+      {
+        id: "mem-1",
+        titre: "Existant",
+        description: "",
+        statut: "Nouveau",
+        priorite: "Moyenne",
+        demandeur: "j",
+        creeLe: "2026-09-23T08:00:00Z",
+      },
+    ];
+    const repo = new InMemoryTicketRepository(seed);
+    const nouveau = await repo.creer({ titre: "Nouveau", demandeur: "j" });
+    expect(nouveau.id).not.toBe("mem-1");
+    expect(nouveau.id).toBe("mem-2");
+  });
 });
 ```
+
+Note : ce dernier test importe aussi `type Ticket` depuis `"../domain/ticket"` — ajouter cet import en tête du fichier de test.
 
 - [ ] **Step 3: Lancer les tests, vérifier l'échec**
 
@@ -485,8 +506,17 @@ import { creerTicket, changerStatut } from "../domain/ticket";
 /** Impl mémoire : sert aux tests et au dev local sans connexion SharePoint. */
 export class InMemoryTicketRepository implements TicketRepository {
   private tickets: Ticket[] = [];
-  private seq = 0;
-  constructor(seed: Ticket[] = []) { this.tickets = [...seed]; }
+  private seq: number;
+
+  constructor(seed: Ticket[] = []) {
+    this.tickets = [...seed];
+    // Le compteur démarre après le plus grand id `mem-N` déjà présent dans le seed,
+    // pour éviter toute collision si un appelant seed avec ce même format d'id.
+    this.seq = seed.reduce((max, t) => {
+      const m = /^mem-(\d+)$/.exec(t.id);
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0);
+  }
 
   async lister(): Promise<Ticket[]> { return [...this.tickets]; }
 
@@ -513,7 +543,7 @@ export class InMemoryTicketRepository implements TicketRepository {
 - [ ] **Step 5: Lancer tous les tests, vérifier le succès**
 
 Run: `npm test`
-Expected: PASS (28 tests verts).
+Expected: PASS (29 tests verts).
 
 - [ ] **Step 6: Commit**
 
@@ -524,18 +554,115 @@ git commit -m "feat(data): contrat TicketRepository + implémentation mémoire (
 
 ---
 
-## Task 5: Hook `useTickets` (orchestration état + rechargement)
+## Task 5: Hook `useTickets` (orchestration état, rechargement, erreurs de mutation)
 
 **Files:**
 - Create: `src/hooks/useTickets.ts`
+- Test: `src/hooks/useTickets.test.ts`
 
 **Interfaces:**
 - Consumes: `TicketRepository` (Task 4), `Ticket`, `NouveauTicket`, `Statut`, `trierParPriorite` (Tasks 1–3).
 - Produces: `useTickets(repo: TicketRepository): { tickets: Ticket[]; chargement: boolean; erreur: string | null; creer(input: NouveauTicket): Promise<void>; changerStatut(id: string, s: Statut): Promise<void>; supprimer(id: string): Promise<void>; recharger(): Promise<void>; }`.
 
-Pas de test dédié pour ce hook : il ne contient aucune règle métier (tout est délégué au domaine et au repository, déjà testés) — conforme au patron déjà établi dans ce projet et à la règle 2 (pas de SDK dans les tests ; les hooks React ne sont testés que si un comportement métier propre y apparaît, ce qui n'est pas le cas ici).
+Ce hook n'importe et n'appelle jamais le SDK directement (il ne dépend que de l'interface `TicketRepository`) : il est donc testable avec `InMemoryTicketRepository` et de simples doublures TypeScript, sans violer la règle 2 (« le SDK n'est jamais appelé dans les tests »). Point corrigé après revue : les trois mutations (`creer`, `changerStatut`, `supprimer`) doivent capturer leurs erreurs dans `erreur`, exactement comme `recharger` le fait déjà pour le chargement — sinon un échec de mutation (ex. écriture SharePoint refusée) ne remonte jamais à l'utilisateur.
 
-- [ ] **Step 1: Implémenter**
+- [ ] **Step 1: Écrire les tests rouges**
+
+```typescript
+// src/hooks/useTickets.test.ts
+import { describe, it, expect } from "vitest";
+import { renderHook, waitFor, act } from "@testing-library/react";
+import { useTickets } from "./useTickets";
+import { InMemoryTicketRepository } from "../data/inMemoryTicketRepository";
+import type { TicketRepository } from "../data/ticketRepository";
+
+describe("useTickets", () => {
+  it("charge la liste au montage puis recharge après création", async () => {
+    const repo = new InMemoryTicketRepository();
+    const { result } = renderHook(() => useTickets(repo));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+    expect(result.current.tickets).toHaveLength(0);
+
+    await act(async () => {
+      await result.current.creer({ titre: "Panne VPN", demandeur: "julien" });
+    });
+
+    expect(result.current.tickets).toHaveLength(1);
+    expect(result.current.erreur).toBeNull();
+  });
+
+  it("recharge après changement de statut et après suppression", async () => {
+    const repo = new InMemoryTicketRepository();
+    const { result } = renderHook(() => useTickets(repo));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+
+    await act(async () => {
+      await result.current.creer({ titre: "X", demandeur: "j" });
+    });
+    const id = result.current.tickets[0].id;
+
+    await act(async () => {
+      await result.current.changerStatut(id, "En cours");
+    });
+    expect(result.current.tickets[0].statut).toBe("En cours");
+
+    await act(async () => {
+      await result.current.supprimer(id);
+    });
+    expect(result.current.tickets).toHaveLength(0);
+  });
+
+  it("expose une erreur si le chargement initial échoue", async () => {
+    const repoEnPanne: TicketRepository = {
+      lister: async () => {
+        throw new Error("réseau indisponible");
+      },
+      creer: async () => {
+        throw new Error("non utilisé");
+      },
+      changerStatut: async () => {
+        throw new Error("non utilisé");
+      },
+      supprimer: async () => {
+        throw new Error("non utilisé");
+      },
+    };
+    const { result } = renderHook(() => useTickets(repoEnPanne));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+    expect(result.current.erreur).toBe("réseau indisponible");
+  });
+
+  it("expose une erreur si une mutation (création) échoue, sans lever pour l'appelant", async () => {
+    const repoMutationEnPanne: TicketRepository = {
+      lister: async () => [],
+      creer: async () => {
+        throw new Error("création refusée");
+      },
+      changerStatut: async () => {
+        throw new Error("non utilisé");
+      },
+      supprimer: async () => {
+        throw new Error("non utilisé");
+      },
+    };
+    const { result } = renderHook(() => useTickets(repoMutationEnPanne));
+    await waitFor(() => expect(result.current.chargement).toBe(false));
+
+    await act(async () => {
+      await result.current.creer({ titre: "X", demandeur: "j" });
+    });
+
+    expect(result.current.erreur).toBe("création refusée");
+  });
+});
+```
+
+- [ ] **Step 2: Lancer les tests, vérifier l'échec**
+
+Run: `npx vitest run src/hooks/useTickets.test.ts`
+Expected: FAIL — `Cannot find module './useTickets'`.
+
+- [ ] **Step 3: Implémenter**
 
 ```typescript
 // src/hooks/useTickets.ts
@@ -565,26 +692,41 @@ export function useTickets(repo: TicketRepository) {
     void recharger();
   }, [recharger]);
 
+  // Chaque mutation capture ses propres erreurs (écriture refusée, réseau, etc.) :
+  // sans ce try/catch, un échec de mutation resterait une promesse rejetée invisible
+  // pour l'utilisateur (bug trouvé en revue avant implémentation).
   const creer = useCallback(
     async (input: NouveauTicket) => {
-      await repo.creer(input);
-      await recharger();
+      try {
+        await repo.creer(input);
+        await recharger();
+      } catch (e) {
+        setErreur(e instanceof Error ? e.message : String(e));
+      }
     },
     [repo, recharger]
   );
 
   const changerStatut = useCallback(
     async (id: string, s: Statut) => {
-      await repo.changerStatut(id, s);
-      await recharger();
+      try {
+        await repo.changerStatut(id, s);
+        await recharger();
+      } catch (e) {
+        setErreur(e instanceof Error ? e.message : String(e));
+      }
     },
     [repo, recharger]
   );
 
   const supprimer = useCallback(
     async (id: string) => {
-      await repo.supprimer(id);
-      await recharger();
+      try {
+        await repo.supprimer(id);
+        await recharger();
+      } catch (e) {
+        setErreur(e instanceof Error ? e.message : String(e));
+      }
     },
     [repo, recharger]
   );
@@ -593,21 +735,21 @@ export function useTickets(repo: TicketRepository) {
 }
 ```
 
-- [ ] **Step 2: Vérifier que le typecheck ne casse rien**
+- [ ] **Step 4: Lancer tous les tests, vérifier le succès**
+
+Run: `npm test`
+Expected: PASS (les 4 nouveaux tests de `useTickets.test.ts` passent, plus tous les tests précédents).
+
+- [ ] **Step 5: Vérifier que le typecheck ne casse rien**
 
 Run: `npx tsc -b --noEmit`
 Expected: aucune erreur liée à `useTickets.ts` (les composants qui le consomment n'existent pas encore — Task 6/7 les créeront ; si `tsc -b` échoue à cause de fichiers manquants ailleurs, ignorer pour l'instant et revérifier en Task 8).
 
-- [ ] **Step 3: Lancer les tests existants, vérifier qu'ils passent toujours**
-
-Run: `npm test`
-Expected: PASS (28 tests verts, inchangé — ce hook n'ajoute pas de test).
-
-- [ ] **Step 4: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/hooks/useTickets.ts
-git commit -m "feat(hooks): useTickets orchestre état, chargement et mutations"
+git add src/hooks/useTickets.ts src/hooks/useTickets.test.ts
+git commit -m "feat(hooks): useTickets orchestre état, rechargement, et erreurs de mutation"
 ```
 
 ---
@@ -616,55 +758,47 @@ git commit -m "feat(hooks): useTickets orchestre état, chargement et mutations"
 
 **Files:**
 - Create: `src/components/StatusFilter.tsx`
+- Test: `src/components/StatusFilter.test.tsx`
 - Create: `src/components/TicketForm.tsx`
+- Test: `src/components/TicketForm.test.tsx`
 - Create: `src/components/TicketList.tsx`
 - Test: `src/components/TicketList.test.tsx`
 
 **Interfaces:**
-- Consumes: `Statut`, `STATUTS`, `Priorite`, `NouveauTicket`, `Ticket`, `validerTicket`, `transitionsPossibles` (Tasks 1–3).
+- Consumes: `Statut`, `STATUTS`, `Priorite`, `PRIORITES`, `NouveauTicket`, `Ticket`, `validerTicket`, `transitionsPossibles` (Tasks 1–3).
 - Produces: `StatusFilter({ valeur, onChange })`, `TicketForm({ onCreer })`, `TicketList({ tickets, onChangerStatut, onSupprimer })`.
 
-- [ ] **Step 1: Écrire le test rouge pour le filtrage des transitions dans `TicketList` (couvre le point Review Focus dédié)**
+Point corrigé après revue : `TicketForm` n'avait aucun champ pour `description`, pourtant définie dans `docs/spec.md` (modèle de données) et dans `NouveauTicket` — elle restait toujours vide en pratique. Un textarea optionnel est ajouté. `TicketForm` importe désormais `PRIORITES` depuis `../domain/ticket` (Task 1) au lieu de le redéfinir localement.
+
+- [ ] **Step 1: Écrire les tests rouges pour `StatusFilter`**
 
 ```tsx
-// src/components/TicketList.test.tsx
+// src/components/StatusFilter.test.tsx
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { TicketList } from "./TicketList";
-import type { Ticket } from "../domain/ticket";
+import { StatusFilter } from "./StatusFilter";
 
-const ticket: Ticket = {
-  id: "t1",
-  titre: "VPN inaccessible",
-  description: "",
-  statut: "Nouveau",
-  priorite: "Haute",
-  demandeur: "julien",
-  creeLe: "2026-09-23T10:00:00Z",
-};
-
-describe("TicketList", () => {
-  it("ne propose que les transitions autorisées dans le sélecteur de statut", () => {
-    render(
-      <TicketList tickets={[ticket]} onChangerStatut={vi.fn()} onSupprimer={vi.fn()} />
-    );
-    const select = screen.getByLabelText("Statut de VPN inaccessible") as HTMLSelectElement;
-    const options = Array.from(select.options).map((o) => o.value);
-    // Nouveau → Résolu est interdit (règle 3) : "Résolu" ne doit pas apparaître.
-    expect(options).toEqual(["Nouveau", "En cours"]);
+describe("StatusFilter", () => {
+  it("affiche Tous + les 3 statuts, avec la valeur active marquée", () => {
+    render(<StatusFilter valeur="En cours" onChange={vi.fn()} />);
+    const actif = screen.getByRole("button", { name: "En cours" });
+    expect(actif).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Tous" })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("affiche un message quand la liste est vide", () => {
-    render(<TicketList tickets={[]} onChangerStatut={vi.fn()} onSupprimer={vi.fn()} />);
-    expect(screen.getByText(/Aucun ticket/)).toBeInTheDocument();
+  it("appelle onChange avec le statut cliqué", () => {
+    const onChange = vi.fn();
+    render(<StatusFilter valeur="Tous" onChange={onChange} />);
+    screen.getByRole("button", { name: "Résolu" }).click();
+    expect(onChange).toHaveBeenCalledWith("Résolu");
   });
 });
 ```
 
 - [ ] **Step 2: Lancer le test, vérifier l'échec**
 
-Run: `npx vitest run src/components/TicketList.test.tsx`
-Expected: FAIL — `Cannot find module './TicketList'`.
+Run: `npx vitest run src/components/StatusFilter.test.tsx`
+Expected: FAIL — `Cannot find module './StatusFilter'`.
 
 - [ ] **Step 3: Implémenter `StatusFilter`**
 
@@ -698,31 +832,82 @@ export function StatusFilter({
 }
 ```
 
-- [ ] **Step 4: Implémenter `TicketForm`**
+- [ ] **Step 4: Lancer les tests, vérifier le succès**
+
+Run: `npx vitest run src/components/StatusFilter.test.tsx`
+Expected: PASS (2 tests verts).
+
+- [ ] **Step 5: Écrire les tests rouges pour `TicketForm`**
+
+```tsx
+// src/components/TicketForm.test.tsx
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { TicketForm } from "./TicketForm";
+
+describe("TicketForm", () => {
+  it("affiche les erreurs et n'appelle pas onCreer si le titre est vide", () => {
+    const onCreer = vi.fn();
+    render(<TicketForm onCreer={onCreer} />);
+    fireEvent.click(screen.getByRole("button", { name: "Créer" }));
+    expect(screen.getByText("Le titre est obligatoire.")).toBeInTheDocument();
+    expect(onCreer).not.toHaveBeenCalled();
+  });
+
+  it("appelle onCreer avec titre, demandeur, priorité et description, puis réinitialise le formulaire", async () => {
+    const onCreer = vi.fn().mockResolvedValue(undefined);
+    render(<TicketForm onCreer={onCreer} />);
+
+    fireEvent.change(screen.getByLabelText("Titre"), { target: { value: "VPN inaccessible" } });
+    fireEvent.change(screen.getByLabelText("Demandeur"), { target: { value: "julien" } });
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Depuis ce matin" } });
+    fireEvent.change(screen.getByLabelText("Priorité"), { target: { value: "Haute" } });
+    fireEvent.click(screen.getByRole("button", { name: "Créer" }));
+
+    await vi.waitFor(() =>
+      expect(onCreer).toHaveBeenCalledWith({
+        titre: "VPN inaccessible",
+        demandeur: "julien",
+        description: "Depuis ce matin",
+        priorite: "Haute",
+      })
+    );
+    await vi.waitFor(() => expect(screen.getByLabelText("Titre")).toHaveValue(""));
+    expect(screen.getByLabelText("Priorité")).toHaveValue("Moyenne");
+  });
+});
+```
+
+- [ ] **Step 6: Lancer les tests, vérifier l'échec**
+
+Run: `npx vitest run src/components/TicketForm.test.tsx`
+Expected: FAIL — `Cannot find module './TicketForm'`.
+
+- [ ] **Step 7: Implémenter `TicketForm` (avec le champ Description)**
 
 ```tsx
 // src/components/TicketForm.tsx
 import { useState, type FormEvent } from "react";
 import type { NouveauTicket, Priorite } from "../domain/ticket";
-import { validerTicket } from "../domain/ticket";
-
-const PRIORITES: Priorite[] = ["Basse", "Moyenne", "Haute"];
+import { validerTicket, PRIORITES } from "../domain/ticket";
 
 export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise<void> }) {
   const [titre, setTitre] = useState("");
   const [demandeur, setDemandeur] = useState("");
+  const [description, setDescription] = useState("");
   const [priorite, setPriorite] = useState<Priorite>("Moyenne");
   const [erreurs, setErreurs] = useState<string[]>([]);
 
   async function soumettre(e: FormEvent) {
     e.preventDefault();
-    const input: NouveauTicket = { titre, demandeur, priorite };
+    const input: NouveauTicket = { titre, demandeur, description, priorite };
     const errs = validerTicket(input);
     setErreurs(errs);
     if (errs.length) return;
     await onCreer(input);
     setTitre("");
     setDemandeur("");
+    setDescription("");
     setPriorite("Moyenne");
   }
 
@@ -736,6 +921,14 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
       <label>
         Demandeur
         <input value={demandeur} onChange={(e) => setDemandeur(e.target.value)} placeholder="Prénom Nom" />
+      </label>
+      <label>
+        Description
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Détails utiles pour traiter la demande (optionnel)"
+        />
       </label>
       <label>
         Priorité
@@ -762,7 +955,66 @@ export function TicketForm({ onCreer }: { onCreer: (t: NouveauTicket) => Promise
 }
 ```
 
-- [ ] **Step 5: Implémenter `TicketList` avec le filtrage des transitions**
+- [ ] **Step 8: Lancer les tests, vérifier le succès**
+
+Run: `npx vitest run src/components/TicketForm.test.tsx`
+Expected: PASS (2 tests verts).
+
+- [ ] **Step 9: Écrire les tests rouges pour `TicketList` (filtrage des transitions + interactions, couvre le point Review Focus dédié)**
+
+```tsx
+// src/components/TicketList.test.tsx
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { TicketList } from "./TicketList";
+import type { Ticket } from "../domain/ticket";
+
+const ticket: Ticket = {
+  id: "t1",
+  titre: "VPN inaccessible",
+  description: "",
+  statut: "Nouveau",
+  priorite: "Haute",
+  demandeur: "julien",
+  creeLe: "2026-09-23T10:00:00Z",
+};
+
+describe("TicketList", () => {
+  it("ne propose que les transitions autorisées dans le sélecteur de statut", () => {
+    render(<TicketList tickets={[ticket]} onChangerStatut={vi.fn()} onSupprimer={vi.fn()} />);
+    const select = screen.getByLabelText("Statut de VPN inaccessible") as HTMLSelectElement;
+    const options = Array.from(select.options).map((o) => o.value);
+    // Nouveau → Résolu est interdit (règle 3) : "Résolu" ne doit pas apparaître.
+    expect(options).toEqual(["Nouveau", "En cours"]);
+  });
+
+  it("affiche un message quand la liste est vide", () => {
+    render(<TicketList tickets={[]} onChangerStatut={vi.fn()} onSupprimer={vi.fn()} />);
+    expect(screen.getByText(/Aucun ticket/)).toBeInTheDocument();
+  });
+
+  it("appelle onChangerStatut avec l'id du ticket et le statut choisi", () => {
+    const onChangerStatut = vi.fn();
+    render(<TicketList tickets={[ticket]} onChangerStatut={onChangerStatut} onSupprimer={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("Statut de VPN inaccessible"), { target: { value: "En cours" } });
+    expect(onChangerStatut).toHaveBeenCalledWith("t1", "En cours");
+  });
+
+  it("appelle onSupprimer avec l'id du ticket au clic sur Supprimer", () => {
+    const onSupprimer = vi.fn();
+    render(<TicketList tickets={[ticket]} onChangerStatut={vi.fn()} onSupprimer={onSupprimer} />);
+    fireEvent.click(screen.getByRole("button", { name: "Supprimer" }));
+    expect(onSupprimer).toHaveBeenCalledWith("t1");
+  });
+});
+```
+
+- [ ] **Step 10: Lancer le test, vérifier l'échec**
+
+Run: `npx vitest run src/components/TicketList.test.tsx`
+Expected: FAIL — `Cannot find module './TicketList'`.
+
+- [ ] **Step 11: Implémenter `TicketList` avec le filtrage des transitions**
 
 ```tsx
 // src/components/TicketList.tsx
@@ -812,16 +1064,16 @@ export function TicketList({
 }
 ```
 
-- [ ] **Step 6: Lancer tous les tests, vérifier le succès**
+- [ ] **Step 12: Lancer tous les tests, vérifier le succès**
 
 Run: `npm test`
-Expected: PASS (30 tests verts).
+Expected: PASS (tous les tests précédents + les 2 `StatusFilter` + 2 `TicketForm` + 4 `TicketList`).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
-git add src/components/StatusFilter.tsx src/components/TicketForm.tsx src/components/TicketList.tsx src/components/TicketList.test.tsx
-git commit -m "feat(ui): StatusFilter, TicketForm, TicketList (transitions filtrées, règle 3)"
+git add src/components/StatusFilter.tsx src/components/StatusFilter.test.tsx src/components/TicketForm.tsx src/components/TicketForm.test.tsx src/components/TicketList.tsx src/components/TicketList.test.tsx
+git commit -m "feat(ui): StatusFilter, TicketForm (+description), TicketList (transitions filtrées, règle 3), tests d'interaction"
 ```
 
 ---
@@ -839,7 +1091,9 @@ git commit -m "feat(ui): StatusFilter, TicketForm, TicketList (transitions filtr
 - Consumes: tout ce qui précède (Tasks 1–6).
 - Produces: `export default function App()`, `export function PowerProvider({ children })`, point d'entrée `main.tsx`.
 
-Pas de test dédié (composition root + appel SDK, hors du périmètre testable par la règle 2). La vérification se fait en Task 8 par build + lancement manuel.
+Pas de test dédié (composition root + appel SDK, hors du périmètre testable par la règle 2 — pas de mock du SDK). La vérification se fait en Task 8 par build + lancement manuel.
+
+Point corrigé après revue (bloquant) : la première version de `PowerProvider` appelait `getContext()` **sans condition**, y compris en mode mémoire. Hors d'un hôte Power Apps (`npm run dev` seul), cet appel ne se résout jamais en succès : `pret` ne devient jamais `true`, et le composant reste bloqué sur la bannière d'initialisation ou d'erreur — l'app mémoire ne s'affiche jamais, ce qui contredit directement le mode mémoire exigé par `npm run dev`. Le correctif : en mode mémoire (`VITE_USE_SHAREPOINT` absent/`false`), `PowerProvider` ne doit jamais appeler le SDK et doit rendre `children` immédiatement ; l'attente de `getContext()` ne s'applique qu'en mode SharePoint.
 
 - [ ] **Step 1: Créer le typage d'environnement Vite**
 
@@ -862,15 +1116,22 @@ interface ImportMeta {
 import { useEffect, useState, type ReactNode } from "react";
 import { getContext } from "@microsoft/power-apps/app";
 
+// Même logique de bascule que App.tsx (Step 3) : en mode mémoire, aucune dépendance
+// à un hôte Power Apps n'est nécessaire, donc aucun appel SDK n'est fait ici.
+const useSharePoint = import.meta.env.VITE_USE_SHAREPOINT === "true";
+
 /**
- * Attend que le contexte Power Platform soit disponible AVANT d'afficher
- * les composants qui accèdent aux données (SharePoint).
+ * En mode SharePoint : attend que le contexte Power Platform soit disponible
+ * AVANT d'afficher les composants qui accèdent aux données.
+ * En mode mémoire : rend `children` immédiatement, sans jamais appeler le SDK
+ * (`npm run dev` seul doit suffire — voir CLAUDE.md § Pièges connus).
  */
 export function PowerProvider({ children }: { children: ReactNode }) {
-  const [pret, setPret] = useState(false);
+  const [pret, setPret] = useState(!useSharePoint);
   const [erreur, setErreur] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!useSharePoint) return;
     getContext()
       .then(() => setPret(true))
       .catch((e: unknown) => setErreur(e instanceof Error ? e.message : String(e)));
@@ -1057,7 +1318,7 @@ createRoot(document.getElementById("root")!).render(
 - [ ] **Step 6: Lancer tous les tests, vérifier le succès**
 
 Run: `npm test`
-Expected: PASS (30 tests verts, inchangé).
+Expected: PASS (41 tests verts, inchangé par rapport à la fin du Task 6).
 
 - [ ] **Step 7: Commit**
 
@@ -1082,7 +1343,7 @@ Expected: 0 erreur. Si une erreur apparaît (import inutilisé, type manquant), 
 - [ ] **Step 2: Suite de tests complète**
 
 Run: `npm test`
-Expected: PASS (30 tests verts).
+Expected: PASS (41 tests verts).
 
 - [ ] **Step 3: Build de production**
 
@@ -1092,7 +1353,8 @@ Expected: `tsc -b` puis `vite build` réussissent sans erreur ni warning ; un do
 - [ ] **Step 4: Vérification manuelle en mode mémoire**
 
 Run: `npm run dev`, ouvrir `http://localhost:3000`.
-Vérifier à l'œil : les deux tickets de démo s'affichent, la création d'un ticket fonctionne (titre/demandeur obligatoires, erreurs affichées si vides), le changement de statut ne propose que les transitions autorisées, la suppression fonctionne quel que soit le statut, le filtre par statut fonctionne, la bannière `PowerProvider` peut afficher « Power Platform indisponible » hors de l'hôte Power Apps (attendu en mode `npm run dev` seul, sans casser l'app mémoire).
+Vérifier à l'œil : l'app s'affiche **immédiatement**, sans passer par la bannière « Initialisation Power Platform… » ni « Power Platform indisponible » (depuis le correctif du Task 7, `PowerProvider` ne doit plus appeler le SDK en mode mémoire) ; les deux tickets de démo s'affichent, y compris le champ description quand il est renseigné à la création ; la création d'un ticket fonctionne (titre/demandeur obligatoires, erreurs affichées si vides) ; le changement de statut ne propose que les transitions autorisées ; la suppression fonctionne quel que soit le statut ; le filtre par statut fonctionne.
+Si la bannière Power Platform apparaît et bloque l'affichage, c'est une régression du correctif du Task 7 : la corriger avant de continuer.
 Arrêter le serveur (`Ctrl+C`) une fois vérifié.
 
 - [ ] **Step 5: Commit (uniquement si Step 1 a nécessité des corrections)**
@@ -1136,38 +1398,62 @@ Elle doit correspondre exactement au port 3000 fixé dans `vite.config.ts` (`ser
 Run: `pac connection list`
 Noter le `connectionId` de la connexion `shared_sharepointonline` déjà créée dans `make.powerapps.com` pour le tenant de démo.
 
-- [ ] **Step 4: Générer le service pour la liste `Tickets`**
+- [ ] **Step 4: Découvrir le dataset et la table exacts via `pac code list-datasets` / `list-tables` (au lieu de deviner l'encodage à la main)**
 
-Run (remplacer `<connectionId>` par la valeur notée au Step 3, et `<URL du site>` par l'URL du site SharePoint contenant la liste `Tickets`, **double URL-encodée**) :
+Le flag `-d`/`--dataset` de `pac code add-data-source` n'est **pas documenté officiellement** pour `shared_sharepointonline` (la doc Microsoft Learn actuelle de `pac code` ne précise pas de format d'encodage ; c'est un comportement communautaire — voir Step 5). Pour éviter de deviner, interroger d'abord le connecteur lui-même :
+
+Run (remplacer `<connectionId>` par la valeur notée au Step 3) :
 
 ```bash
-pac code add-data-source -a "shared_sharepointonline" -c "<connectionId>" \
-  -t "Tickets" -d "<URL du site, DOUBLE URL-encodée>"
+pac code list-datasets -a "shared_sharepointonline" -c "<connectionId>"
 ```
 
-- [ ] **Step 5: Localiser le code généré et noter le chemin réel**
+Cette commande liste les datasets (sites) accessibles par la connexion, sous la forme exacte attendue par `-d`. Copier cette valeur telle quelle (ne pas la ré-encoder à la main). Puis :
 
-Run: `ls generated 2>/dev/null; ls src/generated 2>/dev/null`
+```bash
+pac code list-tables -a "shared_sharepointonline" -c "<connectionId>" -d "<dataset copié ci-dessus>"
+```
+
+pour confirmer le nom exact de la table `Tickets` tel qu'attendu par `-t`.
+
+- [ ] **Step 5: Générer le service pour la liste `Tickets`**
+
+Run, en une seule ligne, avec le `connectionId` du Step 3 et le dataset/table copiés tels quels au Step 4 :
+
+```bash
+pac code add-data-source -a "shared_sharepointonline" -c "<connectionId>" -t "<table copiée au Step 4>" -d "<dataset copié au Step 4>"
+```
+
+Si `pac code list-datasets` n'est pas disponible dans la version de `pac` installée, ou si la commande échoue, se rabattre sur l'URL du site SharePoint **double URL-encodée** (ex. `https://contoso.sharepoint.com/sites/aMP` → encoder une fois → `https%3A%2F%2Fcontoso.sharepoint.com%2Fsites%2FaMP` → encoder une seconde fois, les `%` deviennent `%25` → `https%253A%252F%252Fcontoso.sharepoint.com%252Fsites%252FaMP`) : ce double encodage est rapporté de façon cohérente par plusieurs sources communautaires pour `pac code add-data-source` + `shared_sharepointonline` (ex. issue GitHub microsoft/PowerAppsCodeApps#137), bien que non documenté officiellement — ne pas confondre avec le nouveau CLI `pa app add data-source`, dont la doc officielle attend l'URL en clair (non encodée) : ce projet utilise `pac code`, pas `pa app` (CLAUDE.md).
+
+- [ ] **Step 6: Localiser le code généré et noter le chemin réel**
+
+Run (Bash/Git Bash) : `ls generated 2>/dev/null; ls src/generated 2>/dev/null`
+Run (PowerShell) : `Test-Path generated; Test-Path src/generated`
 La documentation officielle actuelle génère dans `src/generated/` ; ce projet a été conçu avec l'hypothèse `generated/` à la racine. **Noter le chemin réellement produit** — il sera utilisé pour les imports du Task 11 (ajuster les imports, jamais les fichiers générés).
 
-- [ ] **Step 6: Inspecter le modèle généré pour la liste `Tickets`**
+- [ ] **Step 7: Inspecter le modèle généré pour la liste `Tickets`**
 
-Ouvrir le fichier de modèle généré (nom approximatif : `TicketsModel.ts` ou équivalent, dans le dossier repéré au Step 5) et noter précisément :
+Ouvrir le fichier de modèle généré (nom approximatif : `TicketsModel.ts` ou équivalent, dans le dossier repéré au Step 6) et noter précisément :
 - le nom exact de la propriété d'identifiant (ex. `ID`) et de toute propriété suffixée `#Id` à exclure des payloads,
 - la forme exacte des colonnes Choix `Statut` et `Priorite` (doit être un objet `{ Value: string }` ou équivalent — vérifier le nom exact du champ),
 - le nom exact du champ système de date de création (ex. `Created`), utilisé pour mapper `creeLe`.
 
 Ces noms exacts sont nécessaires pour écrire un mapping correct au Task 11 — s'ils diffèrent des hypothèses du Task 10, ajuster le mapping en conséquence à ce moment-là.
 
-- [ ] **Step 7: Vérifier que rien n'est cassé côté tests et build**
+- [ ] **Step 8: Vérifier que rien n'est cassé côté tests et build**
 
-Run: `npm test && npx tsc -b --noEmit`
+Run: `npm test` puis `npx tsc -b --noEmit`
 Expected: toujours PASS / 0 erreur (le code généré n'est encore importé nulle part).
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
+
+Ajouter `power.config.json` et le dossier généré réellement produit (celui noté au Step 6 — `generated/` ou `src/generated/`, selon ce qui a été constaté ; si le modèle `pac code` l'a placé sous `.gitignore` par défaut, seul `power.config.json` aura changé, ce qui est normal) :
 
 ```bash
-git add power.config.json generated/ 2>/dev/null || git add power.config.json src/generated/
+git add power.config.json
+git add generated 2>/dev/null
+git add src/generated 2>/dev/null
 git commit -m "chore: génération du service SharePoint pour la liste Tickets (pac code add-data-source)"
 ```
 
@@ -1185,7 +1471,7 @@ Note : selon la politique de `.gitignore` du modèle `pac code`, le dossier gén
 - Consumes: `Ticket`, `Statut`, `Priorite` (Task 1).
 - Produces: `interface SharePointTicketRecord`, `fromSharePoint(record: SharePointTicketRecord): Ticket`, `toSharePoint(ticket: Ticket): SharePointTicketPayload`.
 
-Ces fonctions sont **pures** (aucun import SDK ni `generated/`) : elles sont testables sans mock, contrairement au reste de l'adaptateur SharePoint — conforme à la règle 2 (le SDK n'est jamais appelé dans les tests). Les noms de champs ci-dessous suivent l'hypothèse documentée dans `CLAUDE.md` (§ « Brancher SharePoint ») ; **si l'inspection du modèle généré au Task 9-Step 6 a révélé des noms différents, adapter ce Task avant de l'exécuter.**
+Ces fonctions sont **pures** (aucun import SDK ni `generated/`) : elles sont testables sans mock, contrairement au reste de l'adaptateur SharePoint — conforme à la règle 2 (le SDK n'est jamais appelé dans les tests). Les noms de champs ci-dessous suivent l'hypothèse documentée dans `CLAUDE.md` (§ « Brancher SharePoint ») ; **si l'inspection du modèle généré au Task 9-Step 7 a révélé des noms différents, adapter ce Task avant de l'exécuter.**
 
 - [ ] **Step 1: Écrire les tests rouges**
 
@@ -1250,6 +1536,34 @@ describe("toSharePoint", () => {
     });
   });
 });
+
+describe("fromSharePoint — valeurs distantes invalides (règle 5 rigueur)", () => {
+  it("lève une erreur explicite si la colonne Statut contient une valeur inconnue", () => {
+    const record: SharePointTicketRecord = {
+      ID: 1,
+      Title: "T",
+      Description: "",
+      Statut: { Value: "Archivé" }, // valeur historique/mal configurée, hors du domaine Statut
+      Priorite: { Value: "Moyenne" },
+      Demandeur: "j",
+      Created: "2026-09-23T08:00:00Z",
+    };
+    expect(() => fromSharePoint(record)).toThrow(/Statut SharePoint inattendu/);
+  });
+
+  it("lève une erreur explicite si la colonne Priorite contient une valeur inconnue", () => {
+    const record: SharePointTicketRecord = {
+      ID: 1,
+      Title: "T",
+      Description: "",
+      Statut: { Value: "Nouveau" },
+      Priorite: { Value: "Urgente" }, // hors du domaine Priorite
+      Demandeur: "j",
+      Created: "2026-09-23T08:00:00Z",
+    };
+    expect(() => fromSharePoint(record)).toThrow(/Priorité SharePoint inattendue/);
+  });
+});
 ```
 
 - [ ] **Step 2: Lancer les tests, vérifier l'échec**
@@ -1264,6 +1578,7 @@ Expected: FAIL — `Cannot find module './sharePointMapping'`.
 // Mapping PUR colonnes SharePoint <-> domaine. Aucun import SDK ni generated/ ici :
 // testable sans mock (règle 2 du projet).
 import type { Ticket, Statut, Priorite } from "../domain/ticket";
+import { STATUTS, PRIORITES } from "../domain/ticket";
 
 export interface SharePointChoice {
   Value: string;
@@ -1287,13 +1602,28 @@ export interface SharePointTicketPayload {
   Demandeur: string;
 }
 
+// Point corrigé après revue : un cast `as Statut`/`as Priorite` accepterait
+// silencieusement n'importe quelle valeur distante (liste mal configurée, donnée
+// historique invalide). On valide explicitement contre le domaine connu et on
+// lève une erreur lisible plutôt que de laisser un Ticket typé mais invalide
+// se propager dans l'app.
+function assertStatut(value: string): Statut {
+  if ((STATUTS as string[]).includes(value)) return value as Statut;
+  throw new Error(`Statut SharePoint inattendu : "${value}". Valeurs valides : ${STATUTS.join(", ")}.`);
+}
+
+function assertPriorite(value: string): Priorite {
+  if ((PRIORITES as string[]).includes(value)) return value as Priorite;
+  throw new Error(`Priorité SharePoint inattendue : "${value}". Valeurs valides : ${PRIORITES.join(", ")}.`);
+}
+
 export function fromSharePoint(record: SharePointTicketRecord): Ticket {
   return {
     id: String(record.ID),
     titre: record.Title,
     description: record.Description ?? "",
-    statut: record.Statut.Value as Statut,
-    priorite: record.Priorite.Value as Priorite,
+    statut: assertStatut(record.Statut.Value),
+    priorite: assertPriorite(record.Priorite.Value),
     demandeur: record.Demandeur,
     creeLe: record.Created,
   };
@@ -1313,7 +1643,7 @@ export function toSharePoint(ticket: Ticket): SharePointTicketPayload {
 - [ ] **Step 4: Lancer tous les tests, vérifier le succès**
 
 Run: `npm test`
-Expected: PASS (33 tests verts).
+Expected: PASS (tous les tests précédents + les 5 tests de `sharePointMapping.test.ts`).
 
 - [ ] **Step 5: Commit**
 
@@ -1331,18 +1661,29 @@ git commit -m "feat(data): mapping pur SharePoint <-> domaine, testé sans SDK"
 - Modify: `.env.local` (non commité — copié depuis `.env.local.example`)
 
 **Interfaces:**
-- Consumes: `TicketRepository` (Task 4), `fromSharePoint`/`toSharePoint` (Task 10), le service généré du Task 9 (nom exact du service et de ses méthodes à confirmer à l'ouverture du fichier généré, ex. `TicketsService.getAll/create/update/delete`).
+- Consumes: `TicketRepository` (Task 4), `changerStatut` du domaine (Task 2, importé ici sous l'alias `appliquerTransition`), `fromSharePoint`/`toSharePoint` (Task 10), le service généré du Task 9 (nom exact du service et de ses méthodes à confirmer à l'ouverture du fichier généré, ex. `TicketsService.getAll/get/create/update/delete`).
 - Produces: `SharePointTicketRepository` pleinement fonctionnel (remplace le stub du Task 7).
 
 Cette tâche dépend d'informations produites en Task 9 (chemin exact de `generated/`, nom exact du service et de ses méthodes) qui ne sont connues qu'après génération réelle. Adapter les noms d'import ci-dessous au résultat constaté.
 
-- [ ] **Step 1: Remplacer le stub par l'implémentation réelle**
+Point corrigé après revue (bloquant) : la première version de `changerStatut` envoyait directement le statut cible à SharePoint (`TicketsService.update(id, { Statut: { Value: statut } })`), sans passer par la fonction `changerStatut` du domaine. Résultat : contrairement à `InMemoryTicketRepository` (qui applique déjà la machine à états du domaine), n'importe quel appelant pouvait forcer `Nouveau → Résolu` en mode SharePoint — la règle 3 n'était garantie que par le filtrage du sélecteur UI (Task 6), pas par le repository lui-même. Le correctif : lire d'abord le ticket courant, appliquer la fonction pure `changerStatut` du domaine (qui lève si la transition est interdite), puis persister le seul statut validé.
+
+- [ ] **Step 1: Relire le fichier de modèle généré (Task 9-Step 7) et confirmer le contrat réel avant d'écrire l'adaptateur**
+
+Ouvrir le service et le modèle générés (chemin noté au Task 9-Step 6). Noter précisément, à partir du code réel (pas d'hypothèse) :
+- le nom exact des méthodes du service (`getAll`, `get`, `create`, `update`, `delete` ou équivalents) et leurs signatures,
+- si les réponses sont enveloppées (`{ data: ... }`) ou renvoyées directement,
+- si `getAll()`/`get(id)` renvoient un tableau directement ou un objet `{ value: [...] }`.
+
+Si l'un de ces points diffère de ce qui est supposé au Step 2 ci-dessous, adapter le code avant de l'écrire — ne pas router les divergences vers un `any` (règle 5 : zéro `any`) ni vers un « ajustement » vague : le contrat réel du service généré est la source de vérité, pas les hypothèses de ce plan.
+
+- [ ] **Step 2: Remplacer le stub par l'implémentation réelle, en passant les transitions de statut par le domaine**
 
 ```typescript
 // src/data/sharePointTicketRepository.ts
 import type { TicketRepository } from "./ticketRepository";
 import type { Ticket, NouveauTicket, Statut } from "../domain/ticket";
-import { creerTicket } from "../domain/ticket";
+import { creerTicket, changerStatut as appliquerTransition } from "../domain/ticket";
 import { fromSharePoint, toSharePoint } from "./sharePointMapping";
 // ⚠️ Ajuster ce chemin d'import selon ce qui a été constaté au Task 9 (generated/ à la
 // racine ou src/generated/) et le nom exact du service généré pour la liste Tickets.
@@ -1368,7 +1709,13 @@ export class SharePointTicketRepository implements TicketRepository {
   }
 
   async changerStatut(id: string, statut: Statut): Promise<Ticket> {
-    const maj = await TicketsService.update(id, { Statut: { Value: statut } });
+    // On lit le ticket courant, on applique la machine à états du domaine (qui lève
+    // sur une transition interdite), puis on persiste uniquement le statut validé —
+    // jamais le statut cible brut envoyé par l'appelant.
+    const actuel = await TicketsService.get(id);
+    const ticketActuel = fromSharePoint(actuel.data ?? actuel);
+    const valide = appliquerTransition(ticketActuel, statut);
+    const maj = await TicketsService.update(id, { Statut: { Value: valide.statut } });
     return fromSharePoint(maj.data ?? maj);
   }
 
@@ -1378,17 +1725,17 @@ export class SharePointTicketRepository implements TicketRepository {
 }
 ```
 
-- [ ] **Step 2: Vérifier le typecheck**
+- [ ] **Step 3: Vérifier le typecheck**
 
 Run: `npx tsc -b --noEmit`
 Expected: 0 erreur. Si le service généré expose une forme différente (ex. pas de `.data`, méthodes nommées autrement), corriger cette implémentation pour correspondre exactement à ce que `tsc` rapporte — ne jamais utiliser `any` pour faire taire une erreur (règle 5 : zéro `any`).
 
-- [ ] **Step 3: Lancer la suite de tests (le SDK n'y est toujours pas appelé)**
+- [ ] **Step 4: Lancer la suite de tests (le SDK n'y est toujours pas appelé)**
 
 Run: `npm test`
-Expected: PASS (33 tests verts, inchangé — `SharePointTicketRepository` n'est pas testé unitairement, seul son mapping pur l'est).
+Expected: PASS, inchangé — `SharePointTicketRepository` n'est pas testé unitairement (il appelle le SDK), seul son mapping pur (Task 10) et la machine à états qu'il réutilise (Task 2) le sont.
 
-- [ ] **Step 4: Activer le mode SharePoint localement**
+- [ ] **Step 5: Activer le mode SharePoint localement**
 
 ```bash
 cp .env.local.example .env.local
@@ -1396,13 +1743,13 @@ cp .env.local.example .env.local
 
 Éditer `.env.local` : mettre `VITE_USE_SHAREPOINT=true` et vérifier `VITE_SP_SITE_URL` (URL du site réel, non double-encodée ici — c'est un simple rappel humain, pas une valeur consommée par le code applicatif).
 
-- [ ] **Step 5: Lancer l'hôte Power Apps local et vérifier manuellement**
+- [ ] **Step 6: Lancer l'hôte Power Apps local et vérifier manuellement**
 
 Run: `npm run power:run`
-Ouvrir l'URL « Local Play » indiquée (même profil navigateur que le tenant de démo — **jamais** `npm run dev` seul pour ce mode).
-Vérifier : la liste se charge depuis la vraie liste SharePoint `Tickets`, la création d'un ticket apparaît bien dans SharePoint, le changement de statut persiste, la suppression fonctionne pour un ticket `Résolu`.
+Ouvrir l'URL « Local Play » indiquée (même profil navigateur que le tenant de démo — **jamais** `npm run dev` seul pour ce mode, contrairement à ce que suggérait une version antérieure du runbook de démo, corrigée).
+Vérifier : la liste se charge depuis la vraie liste SharePoint `Tickets`, la création d'un ticket apparaît bien dans SharePoint, le changement de statut persiste, la suppression fonctionne pour un ticket `Résolu`, et une tentative de transition interdite (si testée via un appel direct hors UI) échoue proprement au lieu d'être silencieusement acceptée.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/data/sharePointTicketRepository.ts
