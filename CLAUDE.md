@@ -21,9 +21,10 @@ données dans une liste **SharePoint** `Tickets`.
 npm install
 npm test               # Vitest, une passe — voir docs/superpowers/plans/ pour le compte à jour
 npm run test:watch     # boucle TDD : RED → GREEN → refactor
-npm run build          # tsc -b (typecheck strict) + vite build — doit passer sans erreur
+npm run build          # tsc -b (typecheck strict) + vite build (lit .env.production : app connectée à SharePoint) — doit passer sans erreur
 npm run dev            # http://localhost:3000 — mode MÉMOIRE, sans Power Platform
 # Documentation du design system : http://localhost:3000/#/design-system (mode mémoire)
+npm run dev:sharepoint  # comme dev, mais mode SharePoint (lit .env.sharepoint), à lancer avec power:run
 npm run power:run      # pac code run : hôte Power Apps local, requis pour le mode SharePoint
 npm run push           # pac code push : déploiement
 ```
@@ -51,12 +52,14 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 
 | Fichier | Rôle |
 |---|---|
-| `src/domain/ticket.ts` | Types `Ticket`, `Statut`, `Priorite`, `NouveauTicket`. Fonctions pures : `validerTicket`, `creerTicket`, `changerStatut`, `transitionAutorisee`, `filtrerParStatut`, `trierParPriorite`, `compter`. Les dépendances impures (`id`, `maintenant`) sont **injectées**. |
+| `src/domain/ticket.ts` | Types `Ticket`, `Statut`, `Priorite`, `NouveauTicket`. Fonctions pures : `validerTicket`, `creerTicket`, `changerStatut`, `transitionAutorisee`, `transitionsPossibles`, `filtrerParStatut`, `trierParPriorite`, `compter`, `prochainATraiter` (règle 7), `libelleTransition`. Les dépendances impures (`id`, `maintenant`) sont **injectées**. |
 | `src/data/ticketRepository.ts` | Interface `TicketRepository` : `lister`, `creer`, `changerStatut`, `supprimer`. Seule porte vers les données. |
 | `src/data/inMemoryTicketRepository.ts` | Impl mémoire (ids `mem-N`). Utilisée par défaut et dans les tests. |
 | `src/data/sharePointTicketRepository.ts` | Adaptateur SharePoint : mappe colonnes SP ↔ modèle métier, délègue au service généré (`../generated/services/TicketsService`). Implémenté. |
+| `src/data/sharePointMapping.ts` | Mapping pur SharePoint ↔ domaine (`fromSharePoint`, `toSharePoint`, `choixSharePoint`) : lecture en objets `{ Value }`, écriture en `{ Value }`, défauts Nouveau/Moyenne (règle 8). Testé sans SDK. |
 | `src/hooks/useTickets.ts` | État, erreurs, rechargement après chaque mutation. Trie via le domaine. |
-| `src/App.tsx` | Choisit le repo selon `VITE_USE_SHAREPOINT`. Données de démo en mémoire. |
+| `src/components/` | Interface « Le guichet » : `Prochain` (hero du prochain ticket), `TicketList` (tickets à souche, boutons de transition), `TicketForm`, `StatusFilter`, `format.ts` (numéro, date). Maquette de référence : `docs/design/mockups/2-guichet.html`. |
+| `src/App.tsx` | Compose l'écran ; choisit le repo selon `VITE_USE_SHAREPOINT`. Données de démo en mémoire. |
 | `src/PowerProvider.tsx` | Attend `getContext()` avant d'afficher l'app. Bannière si Power Platform indisponible. |
 | `src/design-system/` | Design system **Contoso** : tokens `--cto-*` (primitifs → sémantiques par thème → composants), 12 composants React, doc vivante `#/design-system`. Point d'entrée unique : `index.ts`. **N'importe rien du métier.** Voir `src/design-system/README.md`. |
 | `src/generated/` + `.power/schemas/` | Sortie de `pac code add-data-source` (modèles + services), commitée. **Jamais éditée à la main.** |
@@ -77,7 +80,7 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 6. **Une règle métier = une ligne dans `docs/spec.md` + un test.** Le besoin change ?
    La spec change d'abord.
 7. **Aucun secret dans le code.** Connexions gérées par Power Platform. `.env.local` est
-   ignoré par git. `power.config.json` ne contient que des identifiants non sensibles.
+   versionné (dépôt de démo) et ne contient que des valeurs non sensibles. `power.config.json` ne contient que des identifiants non sensibles.
 8. **YAGNI.** Hors périmètre tant que non demandé : pièces jointes, notifications, droits
    fins, multi-listes.
 9. **Design system Contoso.** Les composants de l'app n'utilisent ni couleur en dur ni couleur
@@ -99,9 +102,9 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 
 ## Environnement et bascule de données
 
-- `VITE_USE_SHAREPOINT` absent ou `false` → mémoire (défaut, plan B de démo).
+- `VITE_USE_SHAREPOINT` absent ou `false` → mémoire (défaut de `npm run dev`, plan B de démo).
   `true` → `SharePointTicketRepository`.
-- `.env.local` : copier `.env.local.example`. Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
+- Fichiers d'environnement, tous versionnés (dépôt de démo, aucun secret) : `.env.local` (mode mémoire, défaut de `npm run dev`), `.env.production` (SharePoint, lu par `npm run build` donc par `npm run push`), `.env.sharepoint` (SharePoint en local, lu par `npm run dev:sharepoint`). Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
 - `power.config.json` : produit par `pac code init` (`appId`, `environmentId`) puis complété par
   `pac code add-data-source` (`connectionReferences`). `pac code init` refuse de s'exécuter si le
   fichier existe déjà. Le code applicatif ne le lit pas.
@@ -119,7 +122,7 @@ pac code add-data-source -a "shared_sharepointonline" -c "<connectionId>" \
 
 Puis dans `sharePointTicketRepository.ts` : les imports `../generated/...` et le mapping
 (`fromSharePoint` / `toSharePoint`, dans `sharePointMapping.ts`) sont en place ; il reste à
-mettre `VITE_USE_SHAREPOINT=true` et à lancer `npm run power:run`.
+lancer `npm run dev:sharepoint` (mode SharePoint) puis `npm run power:run`.
 
 - Code généré : `src/generated/` et `.power/schemas/`, les deux commités, jamais édités à la main.
   Les imports depuis `src/data/` sont de la forme `../generated/...`.
