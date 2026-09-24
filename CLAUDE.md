@@ -79,8 +79,11 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
    (`useTickets`, `Repository`).
 6. **Une règle métier = une ligne dans `docs/spec.md` + un test.** Le besoin change ?
    La spec change d'abord.
-7. **Aucun secret dans le code.** Connexions gérées par Power Platform. `.env.local` est
-   versionné (dépôt de démo) et ne contient que des valeurs non sensibles. `power.config.json` ne contient que des identifiants non sensibles.
+7. **Aucun secret ni identifiant de tenant dans le code.** Connexions gérées par Power Platform.
+   Les `.env*` sont versionnés (dépôt public) et ne contiennent que des valeurs neutres
+   (`votretenant.sharepoint.com`). `power.config.json` (appId, environmentId, connexions) est
+   **gitignoré** : seul `power.config.example.json` est versionné. Ne jamais y coller le nom du
+   tenant, un GUID d'environnement ou un `connectionId` réels, ni dans un commit, une doc ou un test.
 8. **YAGNI.** Hors périmètre tant que non demandé : pièces jointes, notifications, droits
    fins, multi-listes.
 9. **Design system Contoso.** Les composants de l'app n'utilisent ni couleur en dur ni couleur
@@ -104,15 +107,18 @@ components/ + hooks/  →  data/TicketRepository (contrat)  →  domain/ (pur)
 
 - `VITE_USE_SHAREPOINT` absent ou `false` → mémoire (défaut de `npm run dev`, plan B de démo).
   `true` → `SharePointTicketRepository`.
-- Fichiers d'environnement, tous versionnés (dépôt de démo, aucun secret) : `.env.local` (mode mémoire, défaut de `npm run dev`), `.env.production` (SharePoint, lu par `npm run build` donc par `npm run push`), `.env.sharepoint` (SharePoint en local, lu par `npm run dev:sharepoint`). Variables : `VITE_SP_SITE_URL`, `VITE_USE_SHAREPOINT`.
-- `power.config.json` : produit par `pac code init` (`appId`, `environmentId`) puis complété par
-  `pac code add-data-source` (`connectionReferences`). `pac code init` refuse de s'exécuter si le
-  fichier existe déjà. Le code applicatif ne le lit pas.
+- Fichiers d'environnement, tous versionnés (dépôt public, valeurs neutres, aucun secret) : `.env.local` (mode mémoire, défaut de `npm run dev`), `.env.production` (SharePoint, lu par `npm run build` donc par `npm run push`), `.env.sharepoint` (SharePoint en local, lu par `npm run dev:sharepoint`). Variables : `VITE_USE_SHAREPOINT` (la bascule) et `VITE_SP_SITE_URL` (indicative : déclarée dans `vite-env.d.ts`, jamais lue par le code ; le site réel est dans `power.config.json`).
+- `power.config.json` : **gitignoré**, propre à chaque environnement. Produit par `pac code init`
+  (`appId`, `environmentId`) puis complété par `pac code add-data-source` (`connectionReferences`).
+  `pac code init` refuse de s'exécuter si le fichier existe déjà. Le code applicatif ne le lit pas.
+  Modèle versionné : `power.config.example.json`. Sur un clone : `pac code init`, puis `add-data-source`.
+- `src/generated/` et `.power/schemas/` viennent de la liste de la démo : à régénérer pour une autre liste.
 
 ## Brancher SharePoint (étape 6 du plan)
 
 ```bash
 pac auth create                    # environnement de démo
+pac code init                      # crée votre power.config.json (gitignoré) ; absent sur un clone
 pac connection list                # connectionId SharePoint (la connexion doit préexister dans make.powerapps.com)
 pac code list-datasets ...         # copier la valeur du dataset telle quelle pour -d
 pac code list-tables ...           # copier l'id de la table (un GUID) tel quel pour -t

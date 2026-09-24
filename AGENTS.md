@@ -14,7 +14,7 @@ Règles non-négociables. L'agent lit ce fichier avant chaque prompt.
 - **L'accès données passe par une interface `TicketRepository`** ; l'implémentation SharePoint est isolée dans `src/data/`. Les composants ne parlent jamais au service généré directement.
 - Les fichiers de `generated/` (modèles + services `pac code`) ne sont **jamais** édités à la main.
 - TypeScript `strict`, pas de `any`, fonctions courtes, noms explicites en français métier.
-- **Aucun secret en dur** : connexions gérées par Power Platform ; `.env.local` versionné (dépôt de démo, valeurs non sensibles).
+- **Aucun secret en dur** : connexions gérées par Power Platform ; `.env*` versionnés (dépôt public, valeurs neutres) ; `power.config.json` gitignoré, jamais d'identifiant de tenant réel dans le dépôt.
 - Le SDK doit être **initialisé** (PowerProvider) avant tout appel données.
 
 ## Définition du DONE

@@ -3,6 +3,10 @@
 Objectif : générer une Power App **testée et déployée** en ~16 min, sous contrôle.
 Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture).
 
+Ce document est le **scénario** de la démo. La procédure de déploiement, le nettoyage entre deux
+répétitions, l'aide-mémoire des commandes et le dépannage sont dans
+[`runbook-deploy.md`](runbook-deploy.md) : ils n'y sont pas répétés ici.
+
 ---
 
 ## 0. Pré-conf — à froid, la veille (NE PAS faire en live)
@@ -11,10 +15,11 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - [ ] **Liste SharePoint `Tickets`** créée (colonnes : `Title`, `Description`, `Statut` [choix], `Priorite` [choix], `Demandeur`).
 - [ ] **Connexion SharePoint** créée dans make.powerapps.com ; récupérer son id : `pac connection list`.
 - [ ] **Auth CLI** : `pac auth create --environment <url>` ; vérifier `pac auth list`.
+- [ ] **`power.config.json` local** (gitignoré, propre à ton environnement) : `pac code init` s'il n'existe pas ; modèle : `power.config.example.json`.
 - [ ] **Dataset et table SharePoint** : `pac code list-datasets` puis `pac code list-tables`, valeurs à copier telles quelles (jamais encodées à la main).
 - [ ] **Repo** : `npm install` OK, `npm test` **vert** (voir `docs/superpowers/plans/` pour le compte à jour).
 - [ ] **Design system (bonus A8)** : `npm run dev`, ouvrir `http://localhost:3000/#/design-system`, basculer les deux thèmes (Comptoir / Jour). Captures de secours : `.superpowers/captures-design-system/apres/` (`10-doc-comptoir.png`, `11-doc-jour.png`, `12-doc-jour-themes.png`) — dossier local, ignoré par git, à recopier sur le bureau.
-- [ ] **Checkpoints git** créés (section 3) pour pouvoir sauter à n'importe quelle étape.
+- [ ] **Checkpoints git** : les tags `step-*` sont présents (`git tag`) pour pouvoir sauter à n'importe quelle étape (Plan B).
 - [ ] **Enregistrement de secours** de chaque jalon (asciinema/vidéo) sur le bureau.
 - [ ] **Connexion internet de secours** (partage 4G) + captures déjà prêtes.
 - [ ] Zoom terminal lisible (police ≥ 18 pt), thème clair, `npm run test:watch` testé une fois.
@@ -97,24 +102,9 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 
 ---
 
-## 5. Aide-mémoire commandes
+## Aide-mémoire et pièges
 
-```bash
-npm install                 # 1re fois
-npm test                    # socle métier (voir docs/superpowers/plans/ pour le compte)
-npm run test:watch          # démo RED→GREEN
-npm run dev                 # http://localhost:3000
-                            # doc du design system : http://localhost:3000/#/design-system (local, mode mémoire)
-pac auth list               # vérifier l'env
-pac connection list         # récupérer le connectionId SharePoint
-pac code list-datasets / list-tables / add-data-source   # voir A5 (valeurs copiées, jamais encodées)
-pac code push               # déploiement
-```
-
-## 6. Pièges connus (rappel)
-- **Port 3000 obligatoire** (imposé par le SDK).
-- Dataset SharePoint en **double URL-encode** avec `pac code add-data-source` (le simple ne marche pas) — comportement non documenté officiellement, propre à `pac code` (pas à `pa app`, qui prend l'URL en clair). Plus sûr : `pac code list-datasets`/`list-tables` pour copier la valeur exacte au lieu de l'encoder à la main.
-- La **connexion doit préexister** dans make.powerapps.com (la CLI ne la crée pas).
-- **`generated/` ne s'édite jamais** (régénéré par `pac code`).
-- **SDK initialisé** (PowerProvider) **avant** tout appel données.
-- **Doc du design system** sur le hash `#/design-system` : rendue **hors** `PowerProvider` (pas besoin de Power Platform), fiable en local (`npm run dev`), **non vérifiée dans l'hôte Power Apps**. Les tests de gouvernance du DS font partie de `npm test` ; ne jamais retirer l'option `css.include` de `vitest.config.ts` (sans elle, ces tests passent à vide).
+Commandes, pièges connus (port 3000, double URL-encode du dataset, connexion préexistante,
+`generated/` non éditable, SDK initialisé avant tout appel données, gouvernance du design system)
+et dépannage : voir [`runbook-deploy.md`](runbook-deploy.md), section **Dépannage**, et `CLAUDE.md`
+(sections **Commandes** et **Pièges connus**).

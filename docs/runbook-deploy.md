@@ -2,7 +2,8 @@
 
 Séquence pour déployer l'app en local (connectée à SharePoint), la publier sur PowerApps,
 puis vérifier la version finale sans dépendance à `localhost`. Complète
-`docs/aMP-demo-runbook.md` (scénario de démo) côté procédure de mise en prod.
+`docs/aMP-demo-runbook.md` (scénario de démo) côté procédure de mise en prod. C'est aussi le
+recueil des commandes et du dépannage : le runbook de démo n'en garde pas de copie.
 
 ---
 
@@ -10,32 +11,32 @@ puis vérifier la version finale sans dépendance à `localhost`. Complète
 
 - [ ] `npm install` OK.
 - [ ] `pac auth list` : une session active sur le bon tenant.
+- [ ] `power.config.json` existe **en local** : il est gitignoré (propre à votre environnement,
+      modèle : `power.config.example.json`). Absent sur un clone → `pac code init`.
 - [ ] `pac org select` fait pointer la CLI sur l'environnement du `power.config.json`
       (`environmentId`, sans le préfixe `Default-`) — voir section Dépannage sinon.
 - [ ] `power.config.json` contient déjà `connectionReferences` (étape « brancher SharePoint »
-      faite, cf. `CLAUDE.md`).
+      faite avec `pac code add-data-source`, cf. `CLAUDE.md`).
 
 ---
 
 ## Phase 1 — Déployer en local, connecté à SharePoint
 
-1. Créer `.env.local` si absent :
-   ```bash
-   cp .env.local.example .env.local
-   ```
-   Mettre `VITE_USE_SHAREPOINT=true` (et `VITE_SP_SITE_URL` si besoin).
+1. Rien à configurer côté `.env*` : `npm run dev:sharepoint` lit `.env.sharepoint`
+   (`VITE_USE_SHAREPOINT=true`). Le site SharePoint réel est celui du `power.config.json`.
 2. Lancer **deux terminaux en parallèle** — `pac code run` n'est pas un serveur de dev, c'est
    le proxy d'authentification Power Platform : il s'attend à ce que l'appli tourne déjà sur
    `localhost:3000` (sinon → « localhost a refusé de se connecter » sur l'URL Local Play).
    - **Terminal 1**, à laisser tourner :
      ```bash
-     npm run dev
+     npm run dev:sharepoint
      ```
    - **Terminal 2**, une fois le premier prêt :
      ```bash
      npm run power:run
      ```
-   Les appels données ne passent que par cet hôte — jamais `npm run dev` seul en mode SharePoint.
+   Les appels données ne passent que par cet hôte — jamais `npm run dev:sharepoint` ni `npm run dev`
+   seuls en mode SharePoint.
 3. Sur l'URL « Local Play » (même profil navigateur que le tenant), tester le CRUD complet :
    créer / modifier / supprimer un ticket, vérifier qu'il apparaît dans la liste SharePoint `Tickets`.
 4. Vérifier le design system **Contoso** (documentation vivante, sur le hash `#/design-system`) :
@@ -78,10 +79,10 @@ jamais en boucle automatique.
 
 **Retrouver l'URL de l'app :**
 - `pac code push` l'affiche dans sa sortie console à la fin du déploiement (ligne « App url: … »).
-- Sinon : `make.powerapps.com` → environnement « votre environnement » → **Apps** → chercher
+- Sinon : `make.powerapps.com` → votre environnement (celui de `environmentId`) → **Apps** → chercher
   `aMP Tickets` (= `appDisplayName` du `power.config.json`) → **Détails** ou **Partager**
-  donne l'URL de lancement. `appId` (`11111111-1111-1111-1111-111111111111`) identifie l'app
-  sans ambiguïté si le nom ne suffit pas.
+  donne l'URL de lancement. L'`appId` du `power.config.json` identifie l'app sans ambiguïté si le
+  nom ne suffit pas.
 
 ---
 
@@ -115,7 +116,7 @@ refaire tout ou partie de la démo (Phase 1 → 3) depuis le début.
 mais ni `pac code`, ni `pac power-apps` [lecture seule], ni `pac application` [marketplace
 Dataverse uniquement] n'exposent de `delete` pour un Code App). Ça passe par le portail :
 
-- `make.powerapps.com` → environnement « votre environnement » → **Apps** → `aMP Tickets`
+- `make.powerapps.com` → votre environnement (celui de `environmentId`) → **Apps** → `aMP Tickets`
   → menu **…** → **Supprimer**.
 
 Une fois supprimée, `npm run push` (= `pac code push`) recrée l'app depuis zéro au prochain
@@ -137,19 +138,19 @@ Retire l'entrée de `power.config.json` (`connectionReferences`). Pour rejouer l
 live, relancer ensuite `pac code add-data-source` (cf. `CLAUDE.md`, section « Brancher
 SharePoint »).
 
-⚠️ Ça touche `power.config.json`, `src/generated/` et `.power/schemas/`, tous **commités** —
-vérifier `git status` avant de relancer `add-data-source`, pour ne pas mélanger un état de
-répétition avec les fichiers réels du repo.
+⚠️ Ça touche `power.config.json` (**local, non versionné** : en garder une copie avant), ainsi que
+`src/generated/` et `.power/schemas/` (**commités**) — vérifier `git status` avant de relancer
+`add-data-source`, pour ne pas mélanger un état de répétition avec les fichiers réels du repo.
 
 ### 4. Repartir d'un repo propre
 
 ```bash
 git status                                                        # vérifier ce qui a bougé
-git checkout -- power.config.json src/generated .power/schemas   # si retouchés sans le vouloir
+git checkout -- src/generated .power/schemas   # si retouchés sans le vouloir (power.config.json n'est pas versionné)
 ```
 
-Ou, si des checkpoints git existent (cf. `docs/aMP-demo-runbook.md`, section Plan B) :
-`git checkout checkpoint-<étape>` pour revenir à un état de démo connu.
+Ou, pour revenir à un état de démo connu, utiliser les tags `step-*` (cf. `docs/aMP-demo-runbook.md`,
+section Plan B) : `git switch --detach step-2-development`.
 
 ---
 
@@ -171,12 +172,12 @@ L'`environmentId` attendu est celui de `power.config.json` (retirer le préfixe 
 
 ### L'app en prod affiche des données fictives au lieu de SharePoint
 
-`VITE_USE_SHAREPOINT` est lu **au build**, pas à l'exécution (`src/App.tsx:13`). Si `.env.local`
-est absent ou à `false` au moment de `npm run build`, le bundle retombe sur le mode mémoire —
-et `pac code push` **n'effectue pas de build lui-même**, il republie tel quel le `./dist`
-existant. Comme `.env.local` est gitignore, il faut le recréer après chaque `git clone` /
-poste neuf (`cp .env.local.example .env.local`, `VITE_USE_SHAREPOINT=true`) — sinon un
-`npm run build` fait par réflexe avant de pousser republie du mémoire sans prévenir.
+`VITE_USE_SHAREPOINT` est lu **au build**, pas à l'exécution (`src/App.tsx:13`), et `pac code push`
+**n'effectue pas de build lui-même** : il republie tel quel le `./dist` existant. Le build de
+production lit `.env.production` (`VITE_USE_SHAREPOINT=true`, prioritaire sur `.env.local` qui est en
+mode mémoire). Donc : toujours refaire `npm run build` juste avant `npm run push`, et ne pas changer
+la valeur de `.env.production`. Un `dist` construit dans un autre mode, ou avec un `.env.production`
+modifié, republie du mémoire sans prévenir.
 
 Vérifier avant de publier :
 ```bash
@@ -204,10 +205,30 @@ Vitest 2 renvoie une chaîne **vide** pour tout import `.css?raw` sans l'option
 Ne pas retirer cette option ; un test-garde (« les CSS sont réellement lus ») échoue si elle
 disparaît.
 
-### Autres pièges (rappel, cf. `CLAUDE.md`)
+### Autres pièges (cf. aussi `CLAUDE.md`, section « Pièges connus »)
 
-- Port 3000 obligatoire (`vite.config.ts` `strictPort: true` ↔ `localAppUrl`).
-- Dataset SharePoint en double URL-encode avec `pac code add-data-source` — copier les valeurs
-  depuis `pac code list-datasets` / `list-tables`, ne pas les composer à la main.
-- La connexion SharePoint doit préexister dans `make.powerapps.com`.
-- `src/generated/` ne s'édite jamais (régénéré par `pac code`).
+- **Port 3000 obligatoire** (`vite.config.ts` `strictPort: true` ↔ `localAppUrl`).
+- **Dataset SharePoint en double URL-encode** avec `pac code add-data-source` (le simple ne marche
+  pas) — comportement non documenté officiellement, propre à `pac code` (pas à `pa app`, qui prend
+  l'URL en clair). Plus sûr : copier la valeur exacte depuis `pac code list-datasets` /
+  `list-tables`, ne jamais l'encoder ni la composer à la main.
+- **La connexion SharePoint doit préexister** dans `make.powerapps.com` (la CLI ne la crée pas).
+- **`src/generated/` ne s'édite jamais** (régénéré par `pac code`).
+- **SDK initialisé** (`PowerProvider`, `getContext()`) **avant** tout appel données.
+- **Doc du design system** (`#/design-system`) : rendue **hors** `PowerProvider`, fiable en local,
+  **non vérifiée dans l'hôte Power Apps** (voir Phase 1, étape 4).
+
+### Aide-mémoire commandes
+
+```bash
+npm install                 # 1re fois
+npm test                    # socle métier + gouvernance du design system
+npm run test:watch          # boucle TDD, démo RED → GREEN
+npm run dev                 # http://localhost:3000 (mode mémoire ; doc : /#/design-system)
+npm run dev:sharepoint      # idem en mode SharePoint, avec npm run power:run
+pac auth list               # vérifier la session
+pac connection list         # récupérer le connectionId SharePoint
+pac code list-datasets / list-tables / add-data-source   # valeurs copiées, jamais encodées à la main
+npm run build && npm run push   # build puis pac code push
+```
+

@@ -4,3 +4,6 @@ dist/
 *.log
 .worktrees/
 *.tsbuildinfo
+# Spécifique à votre environnement Power Platform (appId, environmentId, connexions) :
+# généré par `pac code init` / `pac code add-data-source`, modèle dans power.config.example.json.
+power.config.json
