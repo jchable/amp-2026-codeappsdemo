@@ -172,7 +172,7 @@ L'`environmentId` attendu est celui de `power.config.json` (retirer le préfixe 
 
 ### L'app en prod affiche des données fictives au lieu de SharePoint
 
-`VITE_USE_SHAREPOINT` est lu **au build**, pas à l'exécution (`src/App.tsx:13`), et `pac code push`
+`VITE_USE_SHAREPOINT` est lu **au build**, pas à l'exécution (constante `useSharePoint` de `src/App.tsx`), et `pac code push`
 **n'effectue pas de build lui-même** : il republie tel quel le `./dist` existant. Le build de
 production lit `.env.production` (`VITE_USE_SHAREPOINT=true`, prioritaire sur `.env.local` qui est en
 mode mémoire). Donc : toujours refaire `npm run build` juste avant `npm run push`, et ne pas changer
