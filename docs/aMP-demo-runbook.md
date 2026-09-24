@@ -37,7 +37,7 @@ répétitions, l'aide-mémoire des commandes et le dépannage sont dans
 
 ### A1 · Brainstorming → spec (2–3 min) — *jalon spec*
 - **Action** : dans Claude Code, lancer le skill `brainstorming` : « On construit une Power App de suivi de tickets sur une liste SharePoint. »
-- **Montre** : l'agent **pose des questions** (statuts ? priorités ? règles de transition ?) et produit `docs/spec.md`.
+- **Montre** : l'agent **pose des questions** (statuts ? priorités ? règles de transition ?) et produit une spec de conception au format natif (`docs/superpowers/specs/AAAA-MM-JJ-<sujet>-design.md`). Exemple de sortie prête à montrer : [`2026-09-24-amp-tickets-design.md`](superpowers/specs/2026-09-24-amp-tickets-design.md), rédigée après coup. `docs/spec.md` en est la version courte et reste la source de vérité des règles.
 - **Dis** : « Il ne code pas, il interroge. Ça, c'est la spec — et c'est là qu'on corrige, pas dans le code. »
 
 ### A2 · Plan (1–2 min)

@@ -34,7 +34,8 @@ pour la liste de la démo : ils seront régénérés pour la vôtre.
 ```
 CLAUDE.md / AGENTS.md         constitution (règles imposées à l'agent)
 docs/spec.md                  la spec (modèle de données, règles métier)  ← artefact central
-docs/superpowers/             plans d'implémentation et spec du design system
+docs/superpowers/specs/       specs de conception (skill brainstorming) : l'app, le design system
+docs/superpowers/plans/       plans d'implémentation (skill writing-plans)
 docs/aMP-demo-runbook.md      déroulé de démo + plan B
 docs/runbook-deploy.md        procédure de déploiement, nettoyage, dépannage
 docs/design/mockups/          maquettes de l'interface
