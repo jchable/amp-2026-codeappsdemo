@@ -122,7 +122,32 @@ function specifieurs(source: string): string[] {
   return [...source.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1]);
 }
 
+// Côté app : on importe le DS par son index (`../design-system`), jamais par un chemin profond.
+const sourcesApp = import.meta.glob<string>(
+  [
+    "/src/components/**/*.{ts,tsx}",
+    "!/src/components/**/*.test.{ts,tsx}",
+    "/src/App.tsx",
+    "/src/PowerProvider.tsx",
+  ],
+  { query: "?raw", import: "default", eager: true }
+);
+
 describe("gouvernance — frontières", () => {
+  it("les sources du DS sont réellement scannées (glob non vide)", () => {
+    expect(Object.keys(sourcesDs).length).toBeGreaterThan(20);
+  });
+
+  it("l'app importe le DS par son index, jamais par un chemin profond", () => {
+    expect(Object.keys(sourcesApp).length).toBeGreaterThan(5);
+    const fautes = Object.entries(sourcesApp).flatMap(([chemin, source]) =>
+      specifieurs(source)
+        .filter((s) => s.includes("design-system/"))
+        .map((s) => `${chemin} importe ${s}`)
+    );
+    expect(fautes).toEqual([]);
+  });
+
   it("le DS n'importe rien du métier, du SDK, de generated/ ni de l'App", () => {
     const fautes = Object.entries(sourcesDs).flatMap(([chemin, source]) =>
       specifieurs(source)
@@ -148,11 +173,24 @@ describe("gouvernance — accessibilité tactile", () => {
     "/src/design-system/composants/Puce/Puce.css",
   ];
 
+  // Corps du bloc `@media (pointer: coarse)` (commentaires retirés), trouvé par comptage des accolades.
+  function blocCoarse(css: string): string {
+    const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const debut = sansCommentaires.indexOf("@media (pointer: coarse)");
+    if (debut === -1) return "";
+    const ouvrante = sansCommentaires.indexOf("{", debut);
+    if (ouvrante === -1) return "";
+    let profondeur = 0;
+    for (let i = ouvrante; i < sansCommentaires.length; i++) {
+      if (sansCommentaires[i] === "{") profondeur++;
+      if (sansCommentaires[i] === "}") profondeur--;
+      if (profondeur === 0) return sansCommentaires.slice(ouvrante + 1, i);
+    }
+    return "";
+  }
+
   it("les composants interactifs référencent la cible tactile dans un @media (pointer: coarse)", () => {
-    const fautes = INTERACTIFS.filter((chemin) => {
-      const css = fichiersCss[chemin] ?? "";
-      return !/@media \(pointer: coarse\)[\s\S]*var\(--cto-cible-tactile\)/.test(css);
-    });
+    const fautes = INTERACTIFS.filter((chemin) => !blocCoarse(fichiersCss[chemin] ?? "").includes("var(--cto-cible-tactile)"));
     expect(fautes).toEqual([]);
   });
 });

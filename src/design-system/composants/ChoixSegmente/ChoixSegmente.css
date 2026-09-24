@@ -36,7 +36,7 @@
 }
 
 .cto-choix__option input:checked + span {
-  border-color: var(--cto-texte-sur-surface);
+  border-color: var(--cto-encre-souche);
   box-shadow: 0 0 0 2px var(--cto-fond-champ) inset;
 }
 

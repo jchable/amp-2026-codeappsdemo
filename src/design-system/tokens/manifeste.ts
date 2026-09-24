@@ -113,6 +113,7 @@ export const PAIRES_CONTRASTE: readonly PaireContraste[] = [
   p("selection-texte", "selection-fond", 4.5),
   p("retour-erreur-texte", "retour-erreur-fond", 4.5),
   p("retour-erreur-texte-surface", "fond-surface", 4.5),
+  p("retour-erreur-texte-surface", "fond-champ", 3),
   p("retour-info-texte", "retour-info-fond", 4.5),
   ...PRIORITES_COULEUR.map((x) => p(`priorite-${x}-fond`, "fond-creux", 3)),
   p("bordure-controle-page", "fond-page", 3),

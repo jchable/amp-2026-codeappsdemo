@@ -4,7 +4,7 @@
 
 Première version.
 
-- Tokens à trois niveaux (`--cto-*`) : 15 couleurs primitives, échelles d'espacement, de rayons et de typographie ; 35 tokens sémantiques ; tokens de composant pour `Souche`.
+- Tokens à trois niveaux (`--cto-*`) : 15 couleurs primitives, échelles d'espacement, de rayons et de typographie ; 35 tokens sémantiques ; tokens de composant : `--cto-bouton-primaire-fond|texte` (Bouton, surchargés par Souche) et `--cto-souche-*` (Souche).
 - Deux thèmes : **Comptoir** (par défaut) et **Jour** (clair).
 - 12 composants : Bandeau, Bouton, Champ, ChoixSegmente, EtatVide, Grille, Page, Puce, Souche, Surface, Tampon, Titre.
 - Documentation vivante sur `#/design-system`.

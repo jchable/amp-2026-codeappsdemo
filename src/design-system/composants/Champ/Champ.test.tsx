@@ -71,4 +71,42 @@ describe("Champ", () => {
     expect(refInput.current).toBeInstanceOf(HTMLInputElement);
     expect(refTexte.current).toBeInstanceOf(HTMLTextAreaElement);
   });
+
+  it("conserve un aria-describedby fourni par l'appelant quand il n'y a pas d'erreur", () => {
+    render(
+      <>
+        <Champ libelle="Titre" aria-describedby="aide" />
+        <p id="aide">Aide au titre</p>
+      </>
+    );
+    const champ = screen.getByLabelText("Titre");
+    expect(champ).toHaveAttribute("aria-describedby", "aide");
+    expect(champ).toHaveAccessibleDescription("Aide au titre");
+  });
+
+  it("fusionne l'aria-describedby de l'appelant et l'identifiant de l'erreur", () => {
+    render(
+      <>
+        <Champ libelle="Titre" aria-describedby="aide" erreur="Le titre est obligatoire." />
+        <p id="aide">Aide au titre</p>
+      </>
+    );
+    const champ = screen.getByLabelText("Titre");
+    const ids = champ.getAttribute("aria-describedby")?.split(" ");
+    expect(ids).toContain("aide");
+    expect(ids).toHaveLength(2);
+    expect(champ).toHaveAccessibleDescription(expect.stringContaining("Le titre est obligatoire."));
+  });
+
+  it("marque aussi le textarea invalide et le relie à l'erreur", () => {
+    render(<Champ libelle="Description" multiligne erreur="Trop long." />);
+    const champ = screen.getByLabelText("Description");
+    expect(champ).toHaveAttribute("aria-invalid", "true");
+    expect(champ).toHaveAccessibleDescription("Trop long.");
+  });
+
+  it("conserve un aria-invalid fourni par l'appelant quand il n'y a pas d'erreur", () => {
+    render(<Champ libelle="Titre" aria-invalid="true" />);
+    expect(screen.getByLabelText("Titre")).toHaveAttribute("aria-invalid", "true");
+  });
 });

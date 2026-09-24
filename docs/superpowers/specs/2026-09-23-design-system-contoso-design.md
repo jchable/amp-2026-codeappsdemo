@@ -121,7 +121,8 @@ contraste (aucune information n'y est portée).
 
 Uniquement là où la surcharge a du sens : `--cto-bouton-primaire-fond|texte` (définis par `Bouton`
 à partir de `action-primaire-*` ; `Souche` les redéfinit, par un sélecteur descendant, pour ses
-boutons à l'encre) et
+boutons à l'encre), `--cto-souche-fond` (défini par les classes de ton
+`.cto-souche--haute|moyenne|basse|neutre`, lu par la règle de base `.cto-souche`) et
 `--cto-souche-tete-hauteur` / `--cto-souche-encoche` (la position et le rayon de l'encoche du masque
 en dépendent : `Souche` possède les deux). Tout autre style lit directement le niveau 2.
 
@@ -199,8 +200,12 @@ en Comptoir, imposés par le contraste des composants d'interface (WCAG 1.4.11, 
 2. bordure des puces de filtre `teal-500` → `teal-400` sur la page (2,54 → 4,3).
 3. arrondi à l'échelle : espacements et rayons au multiple de 4 px le plus proche (écart ≤ 2 px,
    sauf le padding bas de page 72 → 64 px), tailles de texte 13,5 → 14 et 16 → 17 px (titre `h1`),
-   atténuations 0,9 / 0,85 / 0,8 → `opacite-attenuee` 0,85 ;
-4. `TicketList` passe `className="tampon"` au `Tampon` : classe sans style, conservée pour que le
+   atténuations 0,9 / 0,85 / 0,8 → `opacite-attenuee` 0,85 ; l'écart entre les cartes de la grille
+   de tickets est de 20 px (l'arrondissement aux multiples de 4 les plus proches de 18 px donne 16 ou 20 ;
+   16 ferait passer la disposition de 3 à 4 colonnes à 1280 px) ;
+4. la souche `neutre` garde l'`opacity: 0.92` de l'ancienne carte résolue : littéral conservé
+   volontairement, hors échelle ;
+5. `TicketList` passe `className="tampon"` au `Tampon` : classe sans style, conservée pour que le
    test existant (`selector: ".tampon"`) reste inchangé.
 
 Tout autre écart est un défaut et est signalé.
@@ -243,6 +248,7 @@ d'interface, focus) :
 | `encre-souche` / chaque `priorite-*-fond` (haute, moyenne, basse, neutre) | 4,5 |
 | `action-primaire-texte` / `-fond` et / `encre-souche` (boutons de souche) ; `action-accent-texte` / `-fond` ; `selection-texte` / `-fond` | 4,5 |
 | `retour-erreur-texte` / `-fond` ; `retour-erreur-texte-surface` / `fond-surface` ; `retour-info-texte` / `-fond` | 4,5 |
+| `retour-erreur-texte-surface` / `fond-champ` (bordure du champ invalide) | 3 |
 | chaque `priorite-haute\|moyenne\|basse-fond` (chiffre géant de `Prochain`) / `fond-creux` | 3 |
 | `bordure-controle-page` / `fond-page` ; `bordure-controle-surface` / `fond-champ` | 3 |
 | `anneau-focus` / `fond-page` ; `anneau-focus-creux` / `fond-creux` ; `anneau-focus-surface` / `fond-surface` et chaque `priorite-*-fond` | 3 |

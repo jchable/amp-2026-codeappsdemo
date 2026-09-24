@@ -41,6 +41,17 @@ function Enveloppe({ id, idErreur, libelle, erreur, className, children }: Envel
   );
 }
 
+type ContexteAria = { "aria-describedby"?: string; "aria-invalid"?: boolean | "true" | "false" | "grammar" | "spelling" };
+
+// Fusionne les attributs ARIA de l'appelant avec ceux de l'erreur : on n'écrase jamais l'aide fournie.
+function ariaDuChamp(natifs: ContexteAria, idErreur: string, erreur?: string): ContexteAria {
+  const decrit = [natifs["aria-describedby"], erreur ? idErreur : undefined].filter(Boolean).join(" ");
+  return {
+    "aria-describedby": decrit || undefined,
+    "aria-invalid": erreur ? true : natifs["aria-invalid"],
+  };
+}
+
 // forwardRef ne type qu'un seul élément : la ref est affinée ici, l'appelant ayant choisi `multiligne`.
 export const Champ = forwardRef<ElementChamp, ChampProps>(function Champ(props, ref) {
   const id = useId();
@@ -55,8 +66,7 @@ export const Champ = forwardRef<ElementChamp, ChampProps>(function Champ(props, 
           ref={ref as Ref<HTMLTextAreaElement>}
           id={id}
           className="cto-champ__controle"
-          aria-invalid={erreur ? true : undefined}
-          aria-describedby={erreur ? idErreur : undefined}
+          {...ariaDuChamp(natifs, idErreur, erreur)}
         />
       </Enveloppe>
     );
@@ -70,8 +80,7 @@ export const Champ = forwardRef<ElementChamp, ChampProps>(function Champ(props, 
         ref={ref as Ref<HTMLInputElement>}
         id={id}
         className="cto-champ__controle"
-        aria-invalid={erreur ? true : undefined}
-        aria-describedby={erreur ? idErreur : undefined}
+        {...ariaDuChamp(natifs, idErreur, erreur)}
       />
     </Enveloppe>
   );

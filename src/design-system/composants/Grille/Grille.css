@@ -1,6 +1,7 @@
 .cto-grille {
   display: grid;
-  gap: var(--cto-space-4);
+  /* Écart de 20 px pour éviter une 4e colonne à 1280 px (4×270 + 3×20 = 1140 > 1132 px) */
+  gap: var(--cto-space-5);
 }
 
 ul.cto-grille {
@@ -15,7 +16,6 @@ ul.cto-grille {
 
 .cto-grille--deux-colonnes {
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: var(--cto-space-5);
 }
 
 .cto-grille--auto {

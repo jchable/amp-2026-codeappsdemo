@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { estRouteDoc } from "./routage";
+import { changeDeRoute, estRouteDoc } from "./routage";
 
 describe("estRouteDoc", () => {
   it("reconnaît la route de la doc, avec ou sans sous-chemin", () => {
@@ -16,5 +16,23 @@ describe("estRouteDoc", () => {
 
   it("ne reconnaît pas la doc sans hash", () => {
     expect(estRouteDoc("")).toBe(false);
+  });
+});
+
+describe("changeDeRoute", () => {
+  const base = "http://localhost:3000/";
+
+  it("est vrai quand on passe de l'app à la doc, et de la doc à l'app", () => {
+    expect(changeDeRoute(`${base}#/tickets`, `${base}#/design-system`)).toBe(true);
+    expect(changeDeRoute(`${base}#/design-system`, `${base}#/tickets`)).toBe(true);
+  });
+
+  it("est faux quand on reste dans la doc, ou dans l'app", () => {
+    expect(changeDeRoute(`${base}#/design-system`, `${base}#/design-system/composants`)).toBe(false);
+    expect(changeDeRoute(`${base}#/a`, `${base}#/b`)).toBe(false);
+  });
+
+  it("est vrai de la doc vers une ancre de page : ce hash n'est pas la route de la doc", () => {
+    expect(changeDeRoute(`${base}#/design-system`, `${base}#doc-composants`)).toBe(true);
   });
 });
