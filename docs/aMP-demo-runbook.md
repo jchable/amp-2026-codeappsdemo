@@ -13,6 +13,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - [ ] **Auth CLI** : `pac auth create --environment <url>` ; vérifier `pac auth list`.
 - [ ] **Dataset et table SharePoint** : `pac code list-datasets` puis `pac code list-tables`, valeurs à copier telles quelles (jamais encodées à la main).
 - [ ] **Repo** : `npm install` OK, `npm test` **vert** (voir `docs/superpowers/plans/` pour le compte à jour).
+- [ ] **Design system (bonus A8)** : `npm run dev`, ouvrir `http://localhost:3000/#/design-system`, basculer les deux thèmes (Comptoir / Jour). Captures de secours : `.superpowers/captures-design-system/apres/` (`10-doc-comptoir.png`, `11-doc-jour.png`, `12-doc-jour-themes.png`) — dossier local, ignoré par git, à recopier sur le bureau.
 - [ ] **Checkpoints git** créés (section 3) pour pouvoir sauter à n'importe quelle étape.
 - [ ] **Enregistrement de secours** de chaque jalon (asciinema/vidéo) sur le bureau.
 - [ ] **Connexion internet de secours** (partage 4G) + captures déjà prêtes.
@@ -71,6 +72,13 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 - **Montre** : ouvrir la Power App déployée. **Capture APP EN LIGNE.**
 - **Dis** : « DONE : une Power App fonctionnelle, belle, connectée, testée, en prod. »
 
+### A8 · Bonus — le design system Contoso (1–2 min, **seulement s'il reste du temps**)
+- **Action** : ouvrir `http://localhost:3000/#/design-system` (en local, mode mémoire — pas dans l'hôte Power Apps).
+- **Montre** : les fondations (pastilles de couleurs, **tableau des contrastes** calculés), puis le bouton **Jour** en haut de page : la doc passe en thème clair ; les deux thèmes côte à côte dans la section Thèmes ; la fiche d'un composant (props, accessibilité, à faire / à éviter).
+- **Le coup de théâtre (RED live, ~30 s)** : avec `npm run test:watch` ouvert, ajouter `color: #fff;` dans `src/design-system/composants/Tampon/Tampon.css` → le test **« aucune couleur en dur hors de primitifs.css »** passe au rouge et **nomme le fichier**. **Annuler aussitôt** la ligne (`git checkout -- src/design-system/composants/Tampon/Tampon.css`) → vert.
+- **Dis** : « Le design system se garde tout seul : couleurs, contrastes accessibilité, frontières d'import — tout est testé. L'agent ne peut pas le dégrader sans que ça devienne rouge. »
+- ⚠️ La doc est rendue **hors** de l'hôte Power Apps et n'a **pas été vérifiée** dans celui-ci (voir `docs/runbook-deploy.md`, Phase 1) : ne pas la promettre dans « Local Play » sans l'avoir testée avant.
+
 ---
 
 ## Plan B — filets de sécurité (par point de rupture)
@@ -83,6 +91,7 @@ Deux colonnes : **Plan A** (tout marche) et **Plan B** (filet à chaque rupture)
 | B4 | **A5–A6** SharePoint | connexion, double-encode, port 3000, auth | `VITE_USE_SHAREPOINT=false` → **impl mémoire** : l'app tourne **sans** SharePoint ; montrer le CRUD en mémoire | « L'archi isole les données : l'app marche même sans la plateforme » |
 | B5 | **A7** `pac code push` échoue | erreur de publication | rester sur `npm run dev` (local) + **capture app déployée** de secours | « Le push, je vous le montre en capture — l'app tourne en local » |
 | B6 | **partout** temps qui manque | il reste 3 min | sauter A5–A7 : montrer l'app en **mémoire** (déjà belle) + décrire le push à l'oral | « Le reste, c'est le branchement plateforme — 2 commandes » |
+| B7 | **A8** doc du design system | la page ne s'affiche pas / l'hôte ignore le hash / le RED live ne se déclenche pas | sauter A8, ou montrer les **captures** `11-doc-jour.png` et `12-doc-jour-themes.png` ; si le RED live traîne : `git checkout -- src/design-system/composants/Tampon/Tampon.css` et continuer | « Le design system, je vous le montre en capture — l'app, elle, tourne » |
 
 **Ordre de repli général** : live → checkpoint git → vidéo de secours → captures. Ne jamais rester bloqué > 20 s : bascule et continue de parler.
 
@@ -95,6 +104,7 @@ npm install                 # 1re fois
 npm test                    # socle métier (voir docs/superpowers/plans/ pour le compte)
 npm run test:watch          # démo RED→GREEN
 npm run dev                 # http://localhost:3000
+                            # doc du design system : http://localhost:3000/#/design-system (local, mode mémoire)
 pac auth list               # vérifier l'env
 pac connection list         # récupérer le connectionId SharePoint
 pac code list-datasets / list-tables / add-data-source   # voir A5 (valeurs copiées, jamais encodées)
@@ -107,3 +117,4 @@ pac code push               # déploiement
 - La **connexion doit préexister** dans make.powerapps.com (la CLI ne la crée pas).
 - **`generated/` ne s'édite jamais** (régénéré par `pac code`).
 - **SDK initialisé** (PowerProvider) **avant** tout appel données.
+- **Doc du design system** sur le hash `#/design-system` : rendue **hors** `PowerProvider` (pas besoin de Power Platform), fiable en local (`npm run dev`), **non vérifiée dans l'hôte Power Apps**. Les tests de gouvernance du DS font partie de `npm test` ; ne jamais retirer l'option `css.include` de `vitest.config.ts` (sans elle, ces tests passent à vide).
